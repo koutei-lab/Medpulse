@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MedPulse Insight | 医療と行政の知の羅針盤</title>
+  
+  <!-- iOS Safari ホーム画面アイコン & Web App 設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MedPulse">
+  <link rel="apple-touch-icon" sizes="180x180" id="appleTouchIcon" href="https://placehold.co/180x180/0f766e/ffffff.png?text=MedPulse">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://placehold.co/32x32/0f766e/ffffff.png?text=MP">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
@@ -984,10 +992,70 @@
       }, 200);
     }
 
+    // Safariのホーム画面追加用アイコンをCanvasで高解像度描画（エメラルドグラデーション＋心電パルス）
+    function setupAppleTouchIcon() {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 180;
+        canvas.height = 180;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        // リッチなティール〜スカイブルーのグラデーション背景
+        const grad = ctx.createLinearGradient(0, 0, 180, 180);
+        grad.addColorStop(0, "#0f766e");
+        grad.addColorStop(0.5, "#0d9488");
+        grad.addColorStop(1, "#0284c7");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        // 角丸Rect（iOSの自動マスクにも耐える余裕を持った描画）
+        ctx.rect(0, 0, 180, 180);
+        ctx.fill();
+
+        // 繊細なパルス波形の描画（ホワイト）
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 10;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(25, 95);
+        ctx.lineTo(55, 95);
+        ctx.lineTo(72, 50);
+        ctx.lineTo(95, 138);
+        ctx.lineTo(115, 75);
+        ctx.lineTo(128, 105);
+        ctx.lineTo(138, 95);
+        ctx.lineTo(155, 95);
+        ctx.stroke();
+
+        // 右上にエメラルドのアクセントパルスドット
+        ctx.fillStyle = "#34d399";
+        ctx.beginPath();
+        ctx.arc(145, 38, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 下部にスマートなミニテキスト
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.font = "bold 16px 'Noto Sans JP', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("MedPulse", 90, 162);
+
+        // アイコン要素にセット
+        const iconUrl = canvas.toDataURL("image/png");
+        const touchIconElem = document.getElementById("appleTouchIcon");
+        if (touchIconElem) {
+          touchIconElem.href = iconUrl;
+        }
+      } catch (err) {
+        console.warn("Touch icon generation skipped:", err);
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       loadState();
       applyFontSize(state.fontSize);
       updateBookmarkUI();
+      setupAppleTouchIcon();
 
       // 日付操作
       document.getElementById("prevDayBtn").addEventListener("click", () => {
