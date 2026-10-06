@@ -156,10 +156,26 @@
         <button id="todayBtn" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-xs font-semibold text-white transition shadow-sm shadow-teal-600/30">
           今日
         </button>
-        <button id="nextDayBtn" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-600 flex items-center gap-1 transition">
-          翌日 <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        <button id="generateAiBtn" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 hover:from-teal-700 hover:to-sky-700 text-white text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-sm shadow-teal-700/20" title="AIが最新の公的資料・学会指針から新しい問題を即座に生成します">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 animate-spin-slow"></i>
+          <span>AIで新トピック生成</span>
+        </button>
+        <button id="refreshCardsBtn" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-xs" title="保存済みプールから別の問題をローテーション">
+          <i data-lucide="shuffle" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span class="hidden sm:inline">シャッフル</span>
         </button>
       </div>
+    </div>
+
+    <!-- AI生成中のローディングバナー -->
+    <div id="aiGeneratingBanner" class="hidden bg-gradient-to-r from-teal-50 via-sky-50 to-indigo-50 border border-teal-200/80 rounded-2xl p-4 sm:p-5 shadow-xs text-center space-y-2">
+      <div class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/20 mb-1">
+        <i data-lucide="sparkles" class="w-5 h-5 animate-spin"></i>
+      </div>
+      <h4 class="font-bold text-slate-800 text-sm sm:text-base">AIが最新の医療・行政トピックを自動生成中...</h4>
+      <p class="text-xs text-slate-500 max-w-md mx-auto">
+        最新の学会ガイドライン・厚労省公表資料・診療報酬基準をリサーチし、今日の学習カードを作成しています。少々お待ちください。
+      </p>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-100/70 p-2.5 rounded-xl border border-slate-200/80">
@@ -175,9 +191,12 @@
         </button>
       </div>
 
-      <div class="flex items-center gap-2 text-xs text-slate-600 ml-auto">
-        <span>完了ステータス:</span>
-        <span id="completionProgress" class="font-bold text-teal-700">0 / 3 完了</span>
+      <div class="flex items-center gap-3 text-xs text-slate-600 ml-auto">
+        <span class="text-slate-400 hidden sm:inline" id="poolStatsDisplay">全30問収録</span>
+        <div class="flex items-center gap-1">
+          <span>完了:</span>
+          <span id="completionProgress" class="font-bold text-teal-700">0 / 3 完了</span>
+        </div>
       </div>
     </div>
 
@@ -488,6 +507,132 @@
         sourceUrl: "https://www.pmda.go.jp/review-controllers/devices-controllers/0002.html",
         tags: ["SaMD", "医療AI", "画像診断支援", "内視鏡", "医療安全"]
       },
+      {
+        id: "m07",
+        category: "医学",
+        subCategory: "腎臓内科・CKD",
+        icon: "activity",
+        title: "CKD進行抑制の新基軸：非ステロイド型MRAとSGLT2阻害薬併用",
+        summary: "2型糖尿病を合併するCKDに対するフィネレノン投与とSGLT2阻害薬による腎・心血管イベント抑制。",
+        detail: "選択的非ステロイド型鉱質コルチコイド受容体拮抗薬（フィネレノン）は、従来のステロイド型MRAと比べ受容体結合親和性が高く、アルブミン尿を有意に減少させ腎複合アウトカムを抑制します。SGLT2阻害薬との併用により、高カリウム血症リスクが減弱することも注目されています。",
+        clinicalPoint: "血清カリウム値の定期測定（開始前・投与後4週・用量変更時）と、eGFRの推移モニタリングが安全運用の鍵です。",
+        source: "日本腎臓学会「エビデンスに基づくCKD診療ガイドライン」",
+        sourceExcerpt: "【指針推奨】糖尿病合併CKDにおいて、RAS阻害薬の最大耐用量投与下でもアルブミン尿が持続する場合、フィネレノンまたはSGLT2阻害薬の追加が推奨（推奨度Grade A）されています。",
+        sourceUrl: "https://jsn.or.jp/",
+        tags: ["CKD", "フィネレノン", "SGLT2阻害薬", "腎保護", "高カリウム血症"]
+      },
+      {
+        id: "m08",
+        category: "医学",
+        subCategory: "救急・集中治療",
+        icon: "alert-triangle",
+        title: "敗血症診療ガイドラインの最新改変（qSOFAの位置づけ再考）",
+        summary: "スクリーニング単独ツールとしてのqSOFA依存脱却と、NEWSや早期乳酸値測定を重視した包括的トリアージ。",
+        detail: "以前推奨されたqSOFA（呼吸数≧22、意識変容、収縮期血圧≦100）は感度が低く早期見落としのリスクが指摘され、現在のガイドラインでは「単独の除外ツール」とせず、NEWS（National Early Warning Score）や臨床的疑診を合わせた包括的評価が推奨されています。1時間以内の抗菌薬投与と初期輸液（30mL/kg）の基本原則は堅持されます。",
+        clinicalPoint: "微小循環不全の指標として初療時の血中乳酸値を速やかに測定し、2mmol/L超では蘇生プロトコルを即時起動します。",
+        source: "日本集中治療医学会 / 日本救急医学会「日本版敗血症診療ガイドライン」",
+        sourceExcerpt: "【改訂骨子】院外・一般病棟でのスクリーニングにおいてqSOFA単独ではなくNEWSやSIRSの併用を考慮。敗血症ショック疑い例に対する1時間以内の広域抗菌薬投与と急速輸液、早期ノルアドレナリン導入を推奨。",
+        sourceUrl: "https://www.jsicm.org/publication/guideline.html",
+        tags: ["敗血症", "qSOFA", "集中治療", "NEWS", "乳酸値"]
+      },
+      {
+        id: "m09",
+        category: "医学",
+        subCategory: "循環器・脳卒中",
+        icon: "zap",
+        title: "DOAC中和薬（アンデキサネット アルファ・イダルシズマブ）の緊急使用指針",
+        summary: "経口抗凝固薬内服中の致死性頭蓋内出血や大出血、緊急手術における即時拮抗療法の確立。",
+        detail: "ダビガトラン特異的中和抗体（イダルシズマブ）に加え、第Xa因子阻害薬（アピキサバン・リバーロキサバン）の改変デコイ蛋白中和薬（アンデキサネット アルファ）が臨床現場に普及しました。投与後は抗凝固作用が急速に中和されるため、止血後の血栓塞栓症再発リスクに配慮し適切なタイミングでの抗凝固再開計画が必要です。",
+        clinicalPoint: "最終内服時刻と推算内服量の確認、緊急頭部CTによる血腫増大評価、投与後のリバウンド凝固亢進への警戒が不可欠です。",
+        source: "日本脳卒中学会「脳卒中治療ガイドライン」追補版",
+        sourceExcerpt: "【適正使用指針】生命を脅かす出血または止血困難な大出血時に適応。静脈内ボーラス投与とそれに続く点滴静注によりFXa阻害活性を速やかに中和する。止血確認後は禁忌がなければ可及的速やかに抗凝固療法を再開する。",
+        sourceUrl: "https://www.jsts.gr.jp/guideline/",
+        tags: ["DOAC中和薬", "頭蓋内出血", "抗凝固薬", "アンデキサネット", "脳卒中"]
+      },
+      {
+        id: "m10",
+        category: "医学",
+        subCategory: "呼吸器内科",
+        icon: "wind",
+        title: "成人肺炎診療ガイドラインと医療・介護関連肺炎（NHCAP）の見直し",
+        summary: "過剰な広域抗菌薬使用を是正し、耐性菌リスクと終末期・個人の意思決定を統合した治療アプローチ。",
+        detail: "NHCAP（医療・介護関連肺炎）の分類が一新され、耐性菌リスク因子の有無（過去90日以内の抗菌薬使用、寝たきり状態、免疫不全等）に応じた的確な抗菌薬選択が強調されています。重症度判定にはA-DROPシステムを用いつつ、誤嚥性肺炎では不必要な抗緑膿菌薬・抗MRSA薬の乱用を控え、嚥下リハや口腔ケアを重視します。",
+        clinicalPoint: "誤嚥性肺炎の再発例では、抗菌薬投与のみならずACP（人生会議）に基づくゴール設定や摂食嚥下評価の早期介入が極めて重要です。",
+        source: "日本呼吸器学会「成人肺炎診療ガイドライン」",
+        sourceExcerpt: "【推奨改定】一律の広域抗菌薬投与を見直し、耐性菌リスク因子の層別化評価を導入。誤嚥性肺炎に対してはスルバクタム/アンピシリン等の狭域〜中等度スペクトラムを基本とし、抗菌薬適正使用支援（AST）を推進。",
+        sourceUrl: "https://www.jrs.or.jp/activities/guidelines/",
+        tags: ["肺炎", "A-DROP", "誤嚥性肺炎", "抗菌薬適正使用", "呼吸器"]
+      },
+      {
+        id: "m11",
+        category: "医学",
+        subCategory: "血液内科・免疫療法",
+        icon: "sparkles",
+        title: "CAR-T細胞療法とサイトカイン放出症候群（CRS）の集中管理",
+        summary: "再発難治性B細胞性リンパ腫・骨髄腫に対するキメラ抗原受容体T細胞療法と特有の免疫合併症対策。",
+        detail: "患者自身のT細胞を遺伝子改変して腫瘍抗原（CD19やBCMA等）を特異的標的とする革新治療です。一方でT細胞の急激な活性化に伴い、高熱・低血圧・低酸素を来すサイトカイン放出症候群（CRS）や免疫エフェクター細胞関連神経毒性症候群（ICANS）が発現します。IL-6阻害薬トシリズマブやデキサメタゾンの迅速投与がプロトコル化されています。",
+        clinicalPoint: "発熱出現時の感染症との迅速な鑑別と、ICANS初期兆候（書字障害、見当識障害）を把握するための連日ICEスコア評価が要となります。",
+        source: "日本造血・免疫細胞療法学会「CAR-T細胞療法診療マニュアル」",
+        sourceExcerpt: "【毒性管理指針】CRSグレード2以上（血管作動薬を要しない低血圧または低酸素）では抗IL-6受容体抗体トシリズマブの早期投与を推奨。ICANSに対してはステロイドを中心とした集中全身管理を実施する。",
+        sourceUrl: "https://www.jstct.or.jp/",
+        tags: ["CAR-T", "CRS", "ICANS", "免疫細胞治療", "トシリズマブ"]
+      },
+      {
+        id: "m12",
+        category: "医学",
+        subCategory: "腫瘍内科・乳がん",
+        icon: "target",
+        title: "ADC（抗体薬物複合体）革命と「HER2低発現（HER2-Low）」の臨床概念",
+        summary: "トラスツズマブ デルクステカン（T-DXd）の登場が塗り替えた乳がん・固形がんの治療パラダイム。",
+        detail: "従来のHER2陽性（IHC 3+またはFISH陽性）だけでなく、IHC 1+またはIHC 2+/FISH陰性である「HER2-Low」進行乳がんに対してもT-DXdが高い腫瘍縮小効果と予後改善を示しました。抗体にトポイソメラーゼI阻害薬を強固に結合させ、細胞膜透過性により周囲の腫瘍細胞も攻撃するバイスタンダー効果がメカニズムの核心です。",
+        clinicalPoint: "重篤な薬剤性間質性肺疾患（ILD）が一定頻度で発現するため、定期胸部CT検査および咳・息切れ自覚時の即時休薬・ステロイド治療が必須です。",
+        source: "日本乳癌学会「乳癌診療ガイドライン」",
+        sourceExcerpt: "【指針推奨】化学療法歴のあるHER2低発現切除不能・転移再発乳がんに対し、トラスツズマブ デルクステカン投与を強く推奨。投与中は間質性肺炎の早期発見プロトコルを徹底する。",
+        sourceUrl: "https://jbcs.gr.jp/",
+        tags: ["ADC", "T-DXd", "HER2低発現", "間質性肺疾患", "乳がん"]
+      },
+      {
+        id: "m13",
+        category: "医学",
+        subCategory: "整形外科・骨代謝",
+        icon: "bone",
+        title: "骨粗鬆症におけるシーケンシャルセラピー（骨形成促進薬から骨吸収抑制薬へ）",
+        summary: "骨折超高リスク患者に対するロモソズマブ・テリパラチド先行投与と、それに続くデノスマブ・BP薬リレー。",
+        detail: "既存の脆弱性骨折がある重症骨粗鬆症患者では、骨吸収抑制薬から開始するよりも、まず抗スクレロスチン抗体（ロモソズマブ：1年間）や副甲状腺ホルモン薬（1〜2年間）で骨密度と骨質を強力に再建した後、デノスマブや経口/点滴ビスホスホネート薬へ移行する「連続治療戦略」が標準化されました。",
+        clinicalPoint: "デノスマブ中止時に生じる急速な骨代謝リバウンド（多発椎体骨折リスク）を防ぐため、計画的な休薬・他剤スイッチ指導を遵守します。",
+        source: "骨粗鬆症の予防と治療ガイドライン作成委員会 / 日本骨代謝学会",
+        sourceExcerpt: "【治療シークエンス推奨】重症骨粗鬆症例では骨形成促進薬による先行治療が最も骨折抑制効果が高い。骨形成促進薬の投与期間上限終了後は、獲得した骨量を維持するために速やかに骨吸収抑制薬を投与する。",
+        sourceUrl: "http://www.josteo.com/",
+        tags: ["骨粗鬆症", "シーケンシャルセラピー", "ロモソズマブ", "デノスマブ", "骨折予防"]
+      },
+      {
+        id: "m14",
+        category: "医学",
+        subCategory: "ペインクリニック・神経内科",
+        icon: "activity",
+        title: "神経障害性疼痛の薬物療法アルゴリズムと適正使用",
+        summary: "プレガバリン・ミロガバリン、SNRI（デュロキセチン）、三環系抗うつ薬の使い分けと副作用管理。",
+        detail: "糖尿病性神経障害や帯状疱疹後神経痛、坐骨神経痛などの神経障害性疼痛に対し、Caチャネルα2δリガンド（プレガバリン・ミロガバリン）やSNRI（デュロキセチン）が第1選択薬と位置付けられます。傾眠・めまい・浮腫を避けるため少量から漸増し、漫然投与を避けて効果判定を行います。",
+        clinicalPoint: "高齢者における転倒リスク評価と、自動車運転注意のインフォームドコンセントをカルテに必ず記録します。",
+        source: "日本ペインクリニック学会「神経障害性疼痛薬物療法ガイドライン」",
+        sourceExcerpt: "【第1選択薬】Caチャネルα2δリガンド、SNRI、三環系抗うつ薬（アミトリプチリン）。非オピオイド鎮痛薬（NSAIDsやアセトアミノフェン）単独での漫然投与を是正し、病態に基づいた早期治療導入を推奨。",
+        sourceUrl: "https://www.jspc.gr.jp/",
+        tags: ["神経障害性疼痛", "ミロガバリン", "デュロキセチン", "疼痛管理", "転倒予防"]
+      },
+      {
+        id: "m15",
+        category: "医学",
+        subCategory: "感染症・高齢者医療",
+        icon: "shield",
+        title: "帯状疱疹組換えサブユニットワクチン（シングリックス）の有効性と免疫持続性",
+        summary: "50歳以上の成人および免疫不全リスク者を対象とした、長期的発症・PHN（神経痛）抑制ワクチン。",
+        detail: "水痘帯状疱疹ウイルス糖蛋白質E（gE）と新規アジュバントを配合した組換え不活化ワクチン。生ワクチンに比べ高い有効性（50歳以上で97%、80歳以上でも90%超）を誇り、10年以上の抗体価持続が確認されています。局所反応（疼痛・腫脹・倦怠感）が強く現れるため事前説明が重要です。",
+        clinicalPoint: "2ヶ月間隔（最大6ヶ月以内）で計2回筋肉内接種を行います。免疫抑制剤や生物学的製剤投与中であっても安全に接種可能です。",
+        source: "日本感染症学会「予防接種のてびき」/ 各自治体助成事業指針",
+        sourceExcerpt: "【接種推奨】帯状疱疹および帯状疱疹後神経痛（PHN）の発症を大幅に抑制。免疫機能が低下した成人に対しても安全に接種可能であり、自治体による公費助成制度の導入が全国で急速に拡大しています。",
+        sourceUrl: "https://www.kansensho.or.jp/",
+        tags: ["帯状疱疹", "シングリックス", "ワクチン", "高齢者医療", "PHN予防"]
+      },
 
       // --- 最新 医療行政・制度改革知識 ---
       {
@@ -573,18 +718,148 @@
         sourceExcerpt: "【制度内容】日常的な診療を行う医療機関のうち、かかりつけ医機能を有する旨を都道府県に報告。知事は確認した機能を公表し、医療機能情報提供制度等を通じて国民・患者が身近な医療機関を適切に選択できるよう支援する。",
         sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00055.html",
         tags: ["かかりつけ医機能", "外来機能分化", "地域医療", "在宅医療", "医療法"]
+      },
+      {
+        id: "a07",
+        category: "医療行政",
+        subCategory: "外来機能分化・患者負担",
+        icon: "receipt",
+        title: "紹介受診重点医療機関と選定療養費の義務化",
+        summary: "紹介状なしで大病院を受診した際の定額負担（初診7,000円以上）。外来混雑緩和と勤務医負担軽減。",
+        detail: "特定機能病院や200床以上の地域医療支援病院、および都道府県が指定する「紹介受診重点医療機関」を受診する際、他院からの紹介状を持たない患者には保険給付外の定額負担（初診時医科7,000円・歯科5,000円以上、再診時医科3,000円以上）の徴収が義務付けられています。",
+        clinicalPoint: "クリニックから高度急性期病院へ紹介する際は、患者負担の差異を明確に説明し、逆紹介（病状安定後のクリニック帰還）の連携パスを構築します。",
+        source: "厚生労働省「紹介状なしで重点外来を担う医療機関を受診する場合等の定額負担について」",
+        sourceExcerpt: "【制度の目的】軽症患者の大病院集中を抑制し、高度な専門医療を必要とする重症患者へのリソース集中と勤務医の外来過重労働を是正するための制度的枠組み。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00041.html",
+        tags: ["選定療養費", "紹介受診重点医療機関", "外来機能分化", "紹介状", "医療制度"]
+      },
+      {
+        id: "a08",
+        category: "医療行政",
+        subCategory: "薬事・処方制度",
+        icon: "refresh-cw",
+        title: "リフィル処方箋と長期処方（28日以上）の適正運用",
+        summary: "症状安定患者に対する最大3回までの反復調剤。医師・薬剤師の協働による外来頻度の適正化。",
+        detail: "リフィル処方箋は、一定期間内で最大3回まで医師の再診なしに薬局で調剤を受けられる制度です。湿布薬や向精神薬、麻薬等は対象外。患者の通院負担軽減と医療費効率化が期待される一方、調剤時の薬剤師による服薬状況・体調変化モニタリングと、疑義照会・受診勧奨の連携ルールが不可欠です。",
+        clinicalPoint: "投薬期間満了前に患者の病態変化が生じた場合、薬剤師から処方医への情報提供（トレーシングレポート）を受け即座に再診へ繋ぐ体制を敷きます。",
+        source: "厚生労働省「リフィル処方箋の仕組みと留意事項」",
+        sourceExcerpt: "【算定要件】医師が長期投与可能と判断した症状安定患者が対象。1回あたりの投薬期間及び総投薬期間は医師が個別に判断。薬局薬剤師は調剤ごとに患者の服薬状況や副作用を確認し医師へフィードバックを行う。",
+        sourceUrl: "https://www.mhlw.go.jp/",
+        tags: ["リフィル処方箋", "長期処方", "薬剤師連携", "服薬管理", "医療効率化"]
+      },
+      {
+        id: "a09",
+        category: "医療行政",
+        subCategory: "遠隔医療・情報通信",
+        icon: "monitor",
+        title: "情報通信機器を用いた診療（オンライン診療）の施設基準と指針",
+        summary: "初診からのオンライン診療解禁と、向精神薬処方制限・対面診療への迅速移行体制の義務化。",
+        detail: "オンライン診療料は、厚生労働省の「オンライン診療の適切な実施に関する指針」を遵守し研修を修了した医師が実施します。初診からの実施も可能ですが、麻薬や向精神薬、基礎疾患が把握できない患者へのハイリスク薬処方は厳格に禁じられています。緊急時に対面診療を行える体制（自院または連携医療機関）の確保が必須要件です。",
+        clinicalPoint: "対面診療とオンライン診療の組み合わせ基準や、通信トラブル・急変時の近隣医療機関への搬送手順を事前合意しておく必要があります。",
+        source: "厚生労働省「オンライン診療の適切な実施に関する指針」",
+        sourceExcerpt: "【重要指針】初診における向精神薬の処方は禁止。触診・聴診ができない限界を理解し、診断に疑義がある場合は速やかに対面診療へ切り替える義務がある。診療録に通信状況や録画有無等を適切に記録する。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00043.html",
+        tags: ["オンライン診療", "遠隔医療", "適正使用指針", "向精神薬制限", "医療安全"]
+      },
+      {
+        id: "a10",
+        category: "医療行政",
+        subCategory: "精神医療・人権擁護",
+        icon: "heart-handshake",
+        title: "精神保健福祉法改正（医療保護入院の入院期間制限と虐待防止）",
+        summary: "家族同意による医療保護入院に見直しのメス。期間上限の設定と病院管理者の虐待防止措置義務化。",
+        detail: "本人の同意が得られない非自発的入院である「医療保護入院」について、入院期間の上限（原則6ヶ月以内等）が法定化され、継続には定期的な精神保健指定医による再評価と都道府県知事への報告が義務付けられました。また、精神科病院内での患者虐待防止研修の実施や通報窓口の設置など、人権擁護体制が大幅に強化されています。",
+        clinicalPoint: "退院支援委員会を早期から開催し、地域移行コーディネーターや精神保健福祉士と連携した地域生活移行計画の策定を推進します。",
+        source: "厚生労働省「精神保健及び精神障害者福祉に関する法律の一部改正について」",
+        sourceExcerpt: "【法改正の骨子】医療保護入院の期間の上限を設け、定期的な更新確認を実施。家族等による同意が得られない場合の市町村長同意運用の明確化。病院従事者による虐待の早期発見・通報義務の新設。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00050.html",
+        tags: ["精神保健福祉法", "医療保護入院", "人権擁護", "地域移行", "医療法制"]
+      },
+      {
+        id: "a11",
+        category: "医療行政",
+        subCategory: "在宅医療・終末期",
+        icon: "home",
+        title: "在宅医療・訪問診療の機能強化と看取り連携加算",
+        summary: "在宅療養支援診療所（在支診）・病院の24時間対応体制と、ICTを用いた多職種看取りネットワーク。",
+        detail: "超高齢社会における多死時代を見据え、在宅患者訪問診療料や在宅時医学総合管理料（在医総管）の評価が再編されています。特に独居高齢者や末期悪性腫瘍患者に対する24時間往診・連絡体制の構築、看取り実績、訪問看護ステーションやケアマネジャーとICTツールを活用したリアルタイム情報共有を行う体制が加算評価されます。",
+        clinicalPoint: "ACP（アドバンス・ケア・プランニング）を患者・家族と反復して話し合い、救急要請を巡る方針（DNAR等）を共有しておくことが在宅看取りの質を左右します。",
+        source: "厚生労働省「在宅医療の推進について」/ 日本在宅医療連合学会",
+        sourceExcerpt: "【評価体系】重症度や居住形態（自宅または施設）に応じたきめ細かな点数設定。複数の無床診療所が連携して24時間体制を構築する連携型在支診の推進と、ターミナルケア加算における多職種カンファレンスの義務化。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/zaitaku/index.html",
+        tags: ["在宅医療", "訪問診療", "在支診", "看取り", "ACP"]
+      },
+      {
+        id: "a12",
+        category: "医療行政",
+        subCategory: "医療従事者確保・配置",
+        icon: "map-pin",
+        title: "医師偏在是正に向けた重点支援区域と地域枠制度改革",
+        summary: "医師多数県から少数県へのシフト誘導。臨床研修医・専攻医の定員上限（シーリング）とキャリアパス支援。",
+        detail: "大都市圏への医師集中を是正するため、医師偏在指標に基づき「医師少数県」「医師多数県」を定義。専攻医（専門医研修）の採用シーリング（募集定員上限規制）の厳格化や、地方での勤務実績を管理者（病院長）要件とする特定地域勤務医師制度が施行されています。地域枠医師の定着に向けたキャリア形成プログラムの充実が進められています。",
+        clinicalPoint: "総合診療専門医の養成や、地域中核病院と大学病院・大都市病院間での循環型医師派遣協定の構築が喫緊の課題です。",
+        source: "厚生労働省「医師需給分科会 / 医療従事者の需給に関する検討会」",
+        sourceExcerpt: "【対策骨子】全国一律の指標による偏在状況の可視化。医師少数区域での勤務経験を一定の公的病院の管理者要件とする仕組み。地域医療対策協議会を通じた実効性ある研修医・専攻医の配置調整。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/shingi/other-isei_208035.html",
+        tags: ["医師偏在対策", "シーリング", "地域枠", "専門医制度", "医療政策"]
+      },
+      {
+        id: "a13",
+        category: "医療行政",
+        subCategory: "医療保険財政・高額療養費",
+        icon: "coins",
+        title: "高額療養費制度の上限額見直しと現役世代の保険料負担軽減",
+        summary: "革新的新薬（抗体薬・遺伝子治療）の高額化に伴う財政圧迫と、所得区分・資産に応じた負担の公平化。",
+        detail: "分子標的薬やCAR-T細胞療法など数千万円規模の超高額薬剤が登場する中、患者の自己負担を一定限度に抑える「高額療養費制度」の持続可能性が最大の議論となっています。高齢者・高所得者の自己負担上限の段階的引き上げや、世帯合算・多数回該当のルールの見直しを通じて、現役世代の保険料負担上昇を抑制する改革が進行しています。",
+        clinicalPoint: "窓口での限度額適用認定証の提示やマイナ保険証利用により、一時的な多額の立て替え負担を不要にする案内が窓口で求められます。",
+        source: "社会保障審議会 医療保険部会資料「高額療養費制度の見直しについて」",
+        sourceExcerpt: "【議論の方向性】医療の高度化に伴う医療給付費の急増に対応し、負担能力に応じた公平な負担（応能負担）を徹底。限度額区分の細分化や金融資産の保有状況を考慮した見直しが検討されています。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/shingi/shingi-hosho_126707.html",
+        tags: ["高額療養費", "医療保険制度", "応能負担", "医療財政", "限度額適用"]
+      },
+      {
+        id: "a14",
+        category: "医療行政",
+        subCategory: "入院医療・病棟再編",
+        icon: "layout-grid",
+        title: "地域包括医療病棟の新設と急性期病床からの転換",
+        summary: "高齢者救急の受け入れと早期リハビリ・栄養・退院支援を包括評価する新たな病棟区分。",
+        detail: "急性期一般病棟（旧7対1・10対1）から、急性増悪した高齢者救急を積極的に受け入れ、リハビリテーション、栄養管理、口腔ケア、在宅復帰支援を包括的に提供する「地域包括医療病棟」が新設されました。看護配置10対1、リハ専門職・管理栄養士の専従配置、在宅復帰率などの厳しい施設基準が設定されています。",
+        clinicalPoint: "入院早期（48時間以内）からのADL維持計画策定と多職種回診が、平均在院日数短縮と高点数維持の鍵となります。",
+        source: "厚生労働省「令和6年度診療報酬改定の概要（入院医療）」",
+        sourceExcerpt: "【新設要件】救急搬送等の受け入れ実績、専従の理学療法士等の配置による1日平均2単位以上の疾患別リハ提供、早期栄養介入管理加算の算定体制などを満たすことを求める包括入院料。",
+        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00045.html",
+        tags: ["地域包括医療病棟", "高齢者救急", "リハビリテーション", "急性期再編", "診療報酬"]
+      },
+      {
+        id: "a15",
+        category: "医療行政",
+        subCategory: "医薬品適正使用・安全",
+        icon: "alert-octagon",
+        title: "ポリファーマシー対策と薬剤総合評価調整加算",
+        summary: "6剤以上の多剤服用患者に対する処方見直し。入院・外来における減薬と副作用防止の多職種協働。",
+        detail: "複数の慢性疾患を抱える高齢者で問題となる「ポリファーマシー（多剤併用による有害事象）」。内服薬が6種類以上ある患者に対し、医師・薬剤師・看護師が連携して処方の必要性を再評価し、2種類以上の処方を減らし4週間以上維持した場合に算定されます。処方カスケード（副作用に対して別の薬を追加する悪循環）の断ち切りが焦点です。",
+        clinicalPoint: "自己中断を防ぐため、減薬の意図を患者・家族に丁寧に説明し、漸減中止後の症状再燃がないか外来や訪問看護で密にフォローします。",
+        source: "日本老年医学会「高齢者の安全な薬物療法ガイドライン」/ 厚生労働省",
+        sourceExcerpt: "【施設基準・算定要件】入院前または受診時に6種類以上の内服薬が処方されている患者に対し、薬物有害事象の有無を総合評価し2剤以上減薬させた場合に評価。退院時サマリーでの処方変更理由の共有が必須。",
+        sourceUrl: "https://www.jpnsoc.org/",
+        tags: ["ポリファーマシー", "減薬", "薬剤総合評価調整加算", "処方カスケード", "高齢者薬物療法"]
       }
     ];
 
     const STORAGE_KEY = "medi_admin_daily_state";
 
     let state = {
-      currentDateOffset: 0, // 0 = 今日, -1 = 前日, +1 = 翌日
+      currentDateOffset: 0, // 0 = 今日, -1 = 前日
       deliveryCount: 3,     // 1〜5件
       balanceSetting: "balanced",
       fontSize: "md",       // sm, md, lg, xl
       completedCardIds: [],
       bookmarkedCardIds: [],
+      viewedCardIds: [],    // 既出トラッキング
+      generatedCards: [],   // AI生成によって追加されたカード群（永続蓄積）
+      lastAutoGeneratedDate: null, // 自動生成を実行した最終日付（YYYY-MM-DD）
+      sessionSeedOffset: 0, // シャッフル・更新用オフセット
       activeFilter: "all"
     };
 
@@ -595,10 +870,17 @@
         if (saved) {
           const parsed = JSON.parse(saved);
           state = { ...state, ...parsed };
+          if (!Array.isArray(state.viewedCardIds)) state.viewedCardIds = [];
+          if (!Array.isArray(state.generatedCards)) state.generatedCards = [];
         }
       } catch (e) {
         console.warn("Storage loading failed:", e);
       }
+    }
+
+    // 全カードプール（内蔵30問 ＋ AI生成で追加されたカード）
+    function getAllKnowledge() {
+      return [...KNOWLEDGE_BASE, ...state.generatedCards];
     }
 
     function saveState() {
@@ -613,34 +895,159 @@
       const d = new Date();
       d.setDate(d.getDate() + offset);
       const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const monthStr = String(d.getMonth() + 1).padStart(2, '0');
+      const dateStr = String(d.getDate()).padStart(2, '0');
       return {
         year: d.getFullYear(),
         month: d.getMonth() + 1,
         date: d.getDate(),
+        isoDate: `${d.getFullYear()}-${monthStr}-${dateStr}`,
         dayStr: days[d.getDay()],
         fullString: `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${days[d.getDay()]})`,
         seed: d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
       };
     }
 
-    // 日付シードに基づくシャッフル配信セレクター
-    function getDailyCards(dateSeed, count, balance) {
-      let medPool = KNOWLEDGE_BASE.filter(k => k.category === "医学");
-      let admPool = KNOWLEDGE_BASE.filter(k => k.category === "医療行政");
+    // Gemini APIによる新しいデイリートピックの自動生成エンジン
+    async function generateNewTopicWithAI(count = 3) {
+      const banner = document.getElementById("aiGeneratingBanner");
+      const generateBtn = document.getElementById("generateAiBtn");
+      
+      banner.classList.remove("hidden");
+      generateBtn.disabled = true;
+      generateBtn.classList.add("opacity-50", "pointer-events-none");
 
-      // 日付ごとに決定的（再読み込みしても同じ並び）にシャッフル
-      function pseudoShuffle(array, seed) {
-        let arr = [...array];
-        for (let i = arr.length - 1; i > 0; i--) {
-          const x = Math.sin(seed + i) * 10000;
-          const j = Math.floor((x - Math.floor(x)) * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
+      const existingTitles = getAllKnowledge().map(k => k.title).slice(-20);
+
+      const systemInstruction = `あなたは医学教育および医療行政・制度改革の専門アナリストです。
+日本の医師、看護師、医療機関職員、メディカルスタッフ向けに、臨床現場で役立つ最新医学知見および最新の医療行政・診療報酬・医療政策に関する学習カードを作成してください。
+以下のJSONスキーマに従い、実用度が高く正確な内容を出力してください。
+既に作成済みの以下のトピックとは重複しない、新しく有益なテーマを厳選してください:
+${existingTitles.join("、")}`;
+
+      const userPrompt = `日本の「医学・臨床（新薬適応、診断基準、ガイドライン改訂、最新治療など）」と「医療行政・制度（診療報酬改定、医療DX、地域医療構想、医療安全、法改正など）」から、バランスよく合計${count}件の新しい学習トピックを生成してください。
+出典は実在する学会ガイドラインや厚生労働省資料・告示名を明記してください。`;
+
+      const payload = {
+        contents: [{ parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                category: { type: "STRING", enum: ["医学", "医療行政"] },
+                subCategory: { type: "STRING", description: "例: 循環器内科、医療DX、外来機能分化など" },
+                icon: { type: "STRING", description: "lucideアイコン名。例: heart-pulse, activity, shield, building-2, file-spreadsheet, network, pill, brain など" },
+                title: { type: "STRING", description: "簡潔で引き締まった専門的なタイトル" },
+                summary: { type: "STRING", description: "2〜3行の明瞭な概要" },
+                detail: { type: "STRING", description: "背景、病態生理、制度要件などの詳細解説" },
+                clinicalPoint: { type: "STRING", description: "実務・臨床現場での具体的チェックポイント・注意点" },
+                source: { type: "STRING", description: "公的出典名・学会名・資料名" },
+                sourceExcerpt: { type: "STRING", description: "公的資料の骨子・重要箇所の抜粋要約" },
+                sourceUrl: { type: "STRING", description: "厚生労働省または主要学会の関連公式URL" },
+                tags: {
+                  type: "ARRAY",
+                  items: { type: "STRING" }
+                }
+              },
+              required: ["category", "subCategory", "icon", "title", "summary", "detail", "clinicalPoint", "source", "sourceExcerpt", "sourceUrl", "tags"]
+            }
+          }
         }
-        return arr;
+      };
+
+      try {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        // リトライロジック
+        let response;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            response = await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            if (response.ok) break;
+          } catch (e) {
+            if (attempt === 2) throw e;
+            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+          }
+        }
+
+        const data = await response.json();
+        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (candidateText) {
+          const parsed = JSON.parse(candidateText);
+          const newItems = parsed.map((item, idx) => ({
+            ...item,
+            id: `gen_${Date.now()}_${idx}`,
+            isAiGenerated: true
+          }));
+
+          // 生成カードを先頭に追加（今日の学習として即反映）
+          state.generatedCards.unshift(...newItems);
+          // 生成されたカードを即座に表示対象にするため既出を調整
+          newItems.forEach(item => {
+            state.viewedCardIds = state.viewedCardIds.filter(id => id !== item.id);
+          });
+          state.lastAutoGeneratedDate = getDisplayDate(0).isoDate;
+          saveState();
+
+          showToast(`✨ AIが新しいトピックを${newItems.length}件生成しました！`);
+        } else {
+          showToast("AI生成の結果を取得できませんでした。再度お試しください。");
+        }
+      } catch (err) {
+        console.error("AI Generation Error:", err);
+        showToast("生成中にエラーが発生しました。時間を置いてお試しください。");
+      } finally {
+        banner.classList.add("hidden");
+        generateBtn.disabled = false;
+        generateBtn.classList.remove("opacity-50", "pointer-events-none");
+        renderCards();
+      }
+    }
+
+    // 未表示・未完了を優先し、AI生成カードも統合して提示するローテーションセレクター
+    function getDailyCards(dateSeed, count, balance) {
+      const allPool = getAllKnowledge();
+      let medPool = allPool.filter(k => k.category === "医学");
+      let admPool = allPool.filter(k => k.category === "医療行政");
+
+      const effectiveSeed = dateSeed + (state.sessionSeedOffset * 137);
+
+      function sortSmart(pool, seedOffset) {
+        return [...pool].sort((a, b) => {
+          // AI生成された最新カードは最優先
+          if (a.isAiGenerated && !b.isAiGenerated) return -1;
+          if (!a.isAiGenerated && b.isAiGenerated) return 1;
+
+          const aViewed = state.viewedCardIds.includes(a.id);
+          const bViewed = state.viewedCardIds.includes(b.id);
+          const aCompleted = state.completedCardIds.includes(a.id);
+          const bCompleted = state.completedCardIds.includes(b.id);
+
+          const aScore = (aCompleted ? 2 : 0) + (aViewed ? 1 : 0);
+          const bScore = (bCompleted ? 2 : 0) + (bViewed ? 1 : 0);
+
+          if (aScore !== bScore) {
+            return aScore - bScore;
+          }
+
+          const hashA = Math.sin(effectiveSeed + a.id.charCodeAt(1) + seedOffset) * 10000;
+          const hashB = Math.sin(effectiveSeed + b.id.charCodeAt(1) + seedOffset) * 10000;
+          return (hashA - Math.floor(hashA)) - (hashB - Math.floor(hashB));
+        });
       }
 
-      medPool = pseudoShuffle(medPool, dateSeed);
-      admPool = pseudoShuffle(admPool, dateSeed + 99);
+      medPool = sortSmart(medPool, 17);
+      admPool = sortSmart(admPool, 73);
 
       let selected = [];
       if (balance === "medical_priority") {
@@ -652,7 +1059,6 @@
         const medCount = Math.min(medPool.length, count - admCount);
         selected = [...admPool.slice(0, admCount), ...medPool.slice(0, medCount)];
       } else {
-        // 均等バランス (交互にピックアップ)
         let mIdx = 0, aIdx = 0;
         while (selected.length < count && (mIdx < medPool.length || aIdx < admPool.length)) {
           if (mIdx < medPool.length && selected.length < count) {
@@ -664,7 +1070,16 @@
         }
       }
 
-      // 件数上限に合わせてスライス
+      selected.forEach(c => {
+        if (!state.viewedCardIds.includes(c.id)) {
+          state.viewedCardIds.push(c.id);
+        }
+      });
+      if (state.viewedCardIds.length >= allPool.length) {
+        state.viewedCardIds = selected.map(c => c.id);
+      }
+      saveState();
+
       return selected.slice(0, count);
     }
 
@@ -709,9 +1124,14 @@
       document.getElementById("currentDateDisplay").textContent = dateInfo.fullString;
       document.getElementById("scheduleBadge").textContent = `1日${state.deliveryCount}問配信`;
 
+      const allKnowledge = getAllKnowledge();
+      const poolStatsElem = document.getElementById("poolStatsDisplay");
+      if (poolStatsElem) {
+        poolStatsElem.textContent = `全${allKnowledge.length}問 (うちAI生成${state.generatedCards.length}問) / ${state.completedCardIds.length}問習得`;
+      }
+
       let dailyCards = getDailyCards(dateInfo.seed, state.deliveryCount, state.balanceSetting);
 
-      // カテゴリフィルター適用
       if (state.activeFilter !== "all") {
         dailyCards = dailyCards.filter(c => c.category === state.activeFilter);
       }
@@ -744,7 +1164,7 @@
         card.className = `bg-white rounded-2xl border transition-all duration-200 shadow-sm ${borderAccent} p-4 sm:p-6 flex flex-col justify-between gap-4 ${isCompleted ? 'border-slate-200 bg-slate-50/50' : 'border-slate-200'}`;
 
         card.innerHTML = `
-          <!-- 上部タグとアクション（大文字でも折り返して重ならない安全設計） -->
+          <!-- 上部タグとアクション -->
           <div class="flex flex-wrap items-center justify-between gap-2.5 pb-1 border-b border-slate-100">
             <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr ${iconGradient} flex items-center justify-center shadow-md flex-shrink-0">
@@ -756,6 +1176,7 @@
               <span class="text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-slate-100 text-slate-600 font-medium whitespace-nowrap">
                 ${item.subCategory}
               </span>
+              ${item.isAiGenerated ? `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border border-amber-200 font-semibold"><i data-lucide="sparkles" class="w-3 h-3 text-amber-600"></i>AI新トピック</span>` : ''}
               <span class="text-xs text-slate-400 font-mono">#${index + 1}</span>
             </div>
 
@@ -797,7 +1218,7 @@
               </p>
             </div>
 
-            <!-- 常時表示される出典 & Safari等ブラウザで開くリンク -->
+            <!-- 出典表示 -->
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/90 text-xs">
               <div class="flex items-center justify-between gap-2 mb-1.5">
                 <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -827,11 +1248,9 @@
         cardListElem.appendChild(card);
       });
 
-      // 進捗テキスト更新
       const progressElem = document.getElementById("completionProgress");
       progressElem.textContent = `${completedCount} / ${dailyCards.length} 完了`;
 
-      // アイコン再レンダリング
       lucide.createIcons();
     }
 
@@ -875,7 +1294,8 @@
       const container = document.getElementById("bookmarkListContainer");
       container.innerHTML = "";
 
-      const bookmarkedItems = KNOWLEDGE_BASE.filter(k => state.bookmarkedCardIds.includes(k.id));
+      const allKnowledge = getAllKnowledge();
+      const bookmarkedItems = allKnowledge.filter(k => state.bookmarkedCardIds.includes(k.id));
 
       if (bookmarkedItems.length === 0) {
         container.innerHTML = `
@@ -899,6 +1319,7 @@
               <span class="text-[11px] font-semibold px-2 py-0.5 rounded ${isMed ? 'bg-teal-100 text-teal-800' : 'bg-sky-100 text-sky-800'}">
                 ${item.category} / ${item.subCategory}
               </span>
+              ${item.isAiGenerated ? `<span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold">AI</span>` : ''}
             </div>
             <button onclick="toggleBookmark('${item.id}'); renderBookmarkList();" class="text-slate-400 hover:text-red-500 p-1" title="削除">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -918,9 +1339,9 @@
       lucide.createIcons();
     }
 
-    // 出典ボタン押下ハンドラー（Safari等の環境ブロックに依存せず、アプリ内要約ビューと確実なアクセスを提供）
+    // 出典ボタン押下ハンドラー
     function handleOpenSource(itemId) {
-      const item = KNOWLEDGE_BASE.find(k => k.id === itemId);
+      const item = getAllKnowledge().find(k => k.id === itemId);
       if (!item) return;
 
       const titleElem = document.getElementById("sourceModalTitle");
@@ -930,7 +1351,6 @@
 
       titleElem.textContent = item.source;
       
-      // アプリ内でその場で読める公的抜粋＆要点情報
       excerptContainer.innerHTML = `
         <div class="font-bold text-slate-800 border-b border-slate-200/80 pb-1.5 flex items-center gap-1.5">
           <i data-lucide="book-open" class="w-3.5 h-3.5 text-teal-600"></i>
@@ -949,7 +1369,6 @@
       directLink.href = item.sourceUrl;
       directLink.setAttribute("target", "_blank");
 
-      // ユーザーのアクションで確実にモーダルを表示
       openModal("sourceModal", "sourceModalBox");
       lucide.createIcons();
     }
@@ -1062,13 +1481,31 @@
         state.currentDateOffset--;
         renderCards();
       });
-      document.getElementById("nextDayBtn").addEventListener("click", () => {
-        state.currentDateOffset++;
-        renderCards();
-      });
       document.getElementById("todayBtn").addEventListener("click", () => {
         state.currentDateOffset = 0;
         renderCards();
+      });
+
+      // AIで新しいトピックを即座に生成
+      document.getElementById("generateAiBtn").addEventListener("click", () => {
+        generateNewTopicWithAI(state.deliveryCount || 3);
+      });
+
+      // 日付が変わって初回アクセスの場合は自動でAI生成を試みる
+      const todayIso = getDisplayDate(0).isoDate;
+      if (state.lastAutoGeneratedDate !== todayIso && state.generatedCards.length < 200) {
+        // バックグラウンドで本日の新規トピックを生成
+        setTimeout(() => {
+          generateNewTopicWithAI(state.deliveryCount || 3);
+        }, 1200);
+      }
+
+      // 別の問題にシャッフル更新
+      document.getElementById("refreshCardsBtn").addEventListener("click", () => {
+        state.sessionSeedOffset++;
+        saveState();
+        renderCards();
+        showToast("別のトピックを読み込みました！");
       });
 
       // 文字サイズモーダル
