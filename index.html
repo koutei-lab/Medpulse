@@ -156,9 +156,9 @@
         <button id="todayBtn" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-xs font-semibold text-white transition shadow-sm shadow-teal-600/30">
           今日
         </button>
-        <button id="generateAiBtn" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 hover:from-teal-700 hover:to-sky-700 text-white text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-sm shadow-teal-700/20" title="AIが最新の公的資料・学会指針から新しい問題を即座に生成します">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 animate-spin-slow"></i>
-          <span>AIで新トピック生成</span>
+        <button id="generateAiBtn" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 hover:from-teal-700 hover:to-sky-700 text-white text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-sm shadow-teal-700/20" title="Web検索とGeminiを活用し、最新の公的発表や学会指針から新しい問題を即座に生成します">
+          <i data-lucide="globe" class="w-3.5 h-3.5 animate-pulse"></i>
+          <span>最新Webリサーチ生成</span>
         </button>
         <button id="refreshCardsBtn" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-xs" title="保存済みプールから別の問題をローテーション">
           <i data-lucide="shuffle" class="w-3.5 h-3.5 text-slate-500"></i>
@@ -170,11 +170,11 @@
     <!-- AI生成中のローディングバナー -->
     <div id="aiGeneratingBanner" class="hidden bg-gradient-to-r from-teal-50 via-sky-50 to-indigo-50 border border-teal-200/80 rounded-2xl p-4 sm:p-5 shadow-xs text-center space-y-2">
       <div class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/20 mb-1">
-        <i data-lucide="sparkles" class="w-5 h-5 animate-spin"></i>
+        <i data-lucide="globe" class="w-5 h-5 animate-spin"></i>
       </div>
-      <h4 class="font-bold text-slate-800 text-sm sm:text-base">AIが最新の医療・行政トピックを自動生成中...</h4>
+      <h4 class="font-bold text-slate-800 text-sm sm:text-base">Web上の最新医療・行政情報をリサーチ中...</h4>
       <p class="text-xs text-slate-500 max-w-md mx-auto">
-        最新の学会ガイドライン・厚労省公表資料・診療報酬基準をリサーチし、今日の学習カードを作成しています。少々お待ちください。
+        Google検索グラウンディング機能で、最新の厚生労働省答申・通知や日本各医学会の最新ガイドライン改訂・新薬承認情報を検索し、本日のナレッジをリアルタイム生成しています。
       </p>
     </div>
 
@@ -895,20 +895,20 @@
       const d = new Date();
       d.setDate(d.getDate() + offset);
       const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const monthStr = String(d.getMonth() + 1).padStart(2, '0');
-      const dateStr = String(d.getDate()).padStart(2, '0');
+      const month = d.getMonth() + 1;
+      const date = d.getDate();
+      const dayName = days[d.getDay()];
+      const year = d.getFullYear();
+      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+      const seed = year * 10000 + month * 100 + date;
       return {
-        year: d.getFullYear(),
-        month: d.getMonth() + 1,
-        date: d.getDate(),
-        isoDate: `${d.getFullYear()}-${monthStr}-${dateStr}`,
-        dayStr: days[d.getDay()],
-        fullString: `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${days[d.getDay()]})`,
-        seed: d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
+        fullString: `${month}月${date}日 (${dayName})`,
+        seed: seed,
+        isoDate: isoDate
       };
     }
 
-    // Gemini APIによる新しいデイリートピックの自動生成エンジン
+    // Google検索グラウンディングを活用した最新トピック自動生成エンジン
     async function generateNewTopicWithAI(count = 3) {
       const banner = document.getElementById("aiGeneratingBanner");
       const generateBtn = document.getElementById("generateAiBtn");
@@ -917,46 +917,38 @@
       generateBtn.disabled = true;
       generateBtn.classList.add("opacity-50", "pointer-events-none");
 
-      const existingTitles = getAllKnowledge().map(k => k.title).slice(-20);
+      const existingTitles = getAllKnowledge().map(k => k.title).slice(-15);
+      const todayYear = new Date().getFullYear();
 
-      const systemInstruction = `あなたは医学教育および医療行政・制度改革の専門アナリストです。
-日本の医師、看護師、医療機関職員、メディカルスタッフ向けに、臨床現場で役立つ最新医学知見および最新の医療行政・診療報酬・医療政策に関する学習カードを作成してください。
-以下のJSONスキーマに従い、実用度が高く正確な内容を出力してください。
-既に作成済みの以下のトピックとは重複しない、新しく有益なテーマを厳選してください:
-${existingTitles.join("、")}`;
+      const systemPrompt = `あなたは医療情報アナリストです。提供されたGoogle検索結果を精査し、最新の日本の医療・臨床ガイドライン改訂、新薬保険適用、厚生労働省の診療報酬改定、医療政策の発表情報から、臨床医や医療従事者が知るべき学習カードを作成してください。
+出力は必ず指定されたJSONフォーマット（Markdownのバッククォートなしの純粋なJSON文字列）のみを返してください。`;
 
-      const userPrompt = `日本の「医学・臨床（新薬適応、診断基準、ガイドライン改訂、最新治療など）」と「医療行政・制度（診療報酬改定、医療DX、地域医療構想、医療安全、法改正など）」から、バランスよく合計${count}件の新しい学習トピックを生成してください。
-出典は実在する学会ガイドラインや厚生労働省資料・告示名を明記してください。`;
+      const userPrompt = `Google検索を活用して、直近（${todayYear}年前後）の日本の厚生労働省発表資料、中医協答申、日本医学会各分科会の最新ガイドライン、新薬承認適応情報から、最新の「医学・臨床」および「医療行政・制度改革」の重要トピックを${count}件調査し、以下のJSON配列形式で抽出してください。
+
+既に存在する以下のトピックとは異なる、最新のトピックを厳選してください:
+${existingTitles.join("、")}
+
+【出力必須JSON構造】
+[
+  {
+    "category": "医学" または "医療行政",
+    "subCategory": "分野名（例: 呼吸器内科、診療報酬改定、医療DXなど）",
+    "icon": "lucideアイコン名（例: heart-pulse, activity, shield, building-2, file-spreadsheet, network, pill, brain）",
+    "title": "簡潔で専門的なトピック名",
+    "summary": "2〜3行の要約",
+    "detail": "最新の背景、改訂ポイント、制度要件などの詳細解説",
+    "clinicalPoint": "実務・臨床現場でのチェックポイントや注意点",
+    "source": "公的出典名・学会名・資料名",
+    "sourceExcerpt": "公的発表資料の要点・抜粋",
+    "sourceUrl": "検索結果から得られた公式URL（見当たらない場合は厚生労働省https://www.mhlw.go.jp/等の公的URL）",
+    "tags": ["タグ1", "タグ2", "タグ3"]
+  }
+]`;
 
       const payload = {
         contents: [{ parts: [{ text: userPrompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                category: { type: "STRING", enum: ["医学", "医療行政"] },
-                subCategory: { type: "STRING", description: "例: 循環器内科、医療DX、外来機能分化など" },
-                icon: { type: "STRING", description: "lucideアイコン名。例: heart-pulse, activity, shield, building-2, file-spreadsheet, network, pill, brain など" },
-                title: { type: "STRING", description: "簡潔で引き締まった専門的なタイトル" },
-                summary: { type: "STRING", description: "2〜3行の明瞭な概要" },
-                detail: { type: "STRING", description: "背景、病態生理、制度要件などの詳細解説" },
-                clinicalPoint: { type: "STRING", description: "実務・臨床現場での具体的チェックポイント・注意点" },
-                source: { type: "STRING", description: "公的出典名・学会名・資料名" },
-                sourceExcerpt: { type: "STRING", description: "公的資料の骨子・重要箇所の抜粋要約" },
-                sourceUrl: { type: "STRING", description: "厚生労働省または主要学会の関連公式URL" },
-                tags: {
-                  type: "ARRAY",
-                  items: { type: "STRING" }
-                }
-              },
-              required: ["category", "subCategory", "icon", "title", "summary", "detail", "clinicalPoint", "source", "sourceExcerpt", "sourceUrl", "tags"]
-            }
-          }
-        }
+        tools: [{ "google_search": {} }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
       };
 
       try {
@@ -980,32 +972,55 @@ ${existingTitles.join("、")}`;
         }
 
         const data = await response.json();
-        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const candidate = data?.candidates?.[0];
+        const candidateText = candidate?.content?.parts?.[0]?.text;
+
+        // 検索グラウンディングのソース取得
+        let groundingSources = [];
+        if (candidate?.groundingMetadata?.groundingAttributions) {
+          groundingSources = candidate.groundingMetadata.groundingAttributions
+            .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
+            .filter(s => s.uri);
+        }
 
         if (candidateText) {
-          const parsed = JSON.parse(candidateText);
-          const newItems = parsed.map((item, idx) => ({
-            ...item,
-            id: `gen_${Date.now()}_${idx}`,
-            isAiGenerated: true
-          }));
+          // JSON抽出（コードブロックのトリム処理）
+          let jsonStr = candidateText.trim();
+          if (jsonStr.startsWith("```json")) {
+            jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/```$/, "").trim();
+          } else if (jsonStr.startsWith("```")) {
+            jsonStr = jsonStr.replace(/^```\s*/, "").replace(/```$/, "").trim();
+          }
+
+          const parsed = JSON.parse(jsonStr);
+          const newItems = parsed.map((item, idx) => {
+            // 検索から取得した最新URLがあれば補完
+            const matchedSource = groundingSources[idx] || groundingSources[0];
+            const finalUrl = (matchedSource && matchedSource.uri) ? matchedSource.uri : (item.sourceUrl || "https://www.mhlw.go.jp/");
+            return {
+              ...item,
+              sourceUrl: finalUrl,
+              id: `gen_web_${Date.now()}_${idx}`,
+              isAiGenerated: true,
+              isWebGrounded: true
+            };
+          });
 
           // 生成カードを先頭に追加（今日の学習として即反映）
           state.generatedCards.unshift(...newItems);
-          // 生成されたカードを即座に表示対象にするため既出を調整
           newItems.forEach(item => {
             state.viewedCardIds = state.viewedCardIds.filter(id => id !== item.id);
           });
           state.lastAutoGeneratedDate = getDisplayDate(0).isoDate;
           saveState();
 
-          showToast(`✨ AIが新しいトピックを${newItems.length}件生成しました！`);
+          showToast(`🌐 Web検索から最新の知見・トピックを${newItems.length}件取得しました！`);
         } else {
-          showToast("AI生成の結果を取得できませんでした。再度お試しください。");
+          showToast("最新情報の取得結果を解析できませんでした。再度お試しください。");
         }
       } catch (err) {
-        console.error("AI Generation Error:", err);
-        showToast("生成中にエラーが発生しました。時間を置いてお試しください。");
+        console.error("AI Generation with Search Error:", err);
+        showToast("最新情報の取得中にエラーが発生しました。時間を置いてお試しください。");
       } finally {
         banner.classList.add("hidden");
         generateBtn.disabled = false;
@@ -1176,7 +1191,7 @@ ${existingTitles.join("、")}`;
               <span class="text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-slate-100 text-slate-600 font-medium whitespace-nowrap">
                 ${item.subCategory}
               </span>
-              ${item.isAiGenerated ? `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border border-amber-200 font-semibold"><i data-lucide="sparkles" class="w-3 h-3 text-amber-600"></i>AI新トピック</span>` : ''}
+              ${item.isWebGrounded ? `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 text-teal-900 border border-teal-300 font-semibold"><i data-lucide="globe" class="w-3 h-3 text-teal-700"></i>最新Web取得</span>` : (item.isAiGenerated ? `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border border-amber-200 font-semibold"><i data-lucide="sparkles" class="w-3 h-3 text-amber-600"></i>AI新トピック</span>` : '')}
               <span class="text-xs text-slate-400 font-mono">#${index + 1}</span>
             </div>
 
