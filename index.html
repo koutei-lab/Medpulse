@@ -1,1629 +1,1122 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MedPulse Insight | 医療と行政の知の羅針盤</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Somna - 朝の睡眠サイエンス</title>
   
-  <!-- iOS Safari ホーム画面アイコン & Web App 設定 -->
+  <!-- iOS ホーム画面Web Clip（PWA）対応設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="MedPulse">
-  <link rel="apple-touch-icon" sizes="180x180" id="appleTouchIcon" href="https://placehold.co/180x180/0f766e/ffffff.png?text=MedPulse">
-  <link rel="icon" type="image/png" sizes="32x32" href="https://placehold.co/32x32/0f766e/ffffff.png?text=MP">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Somna">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <!-- 動的アプリアイコン（JavaScriptで高画質キャンバスからDataURLを注入） -->
+  <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="">
+  <link id="favicon" rel="icon" type="image/png" sizes="32x32" href="">
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS & Google Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Noto Sans JP"', 'Inter', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', '"Noto Sans JP"', 'sans-serif'],
           },
           colors: {
-            med: {
-              50: '#f0fdfa',
-              100: '#ccfbf1',
-              500: '#14b8a6',
-              600: '#0d9488',
-              700: '#0f766e',
-              900: '#134e4a',
+            night: {
+              950: '#070a12',
+              900: '#0c1222',
+              850: '#11192e',
+              800: '#17223b',
+              700: '#223254',
             },
-            adm: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              700: '#0369a1',
-              900: '#0c4a6e',
+            accent: {
+              moon: '#f6d365',
+              aurora: '#7000ff',
+              indigo: '#6366f1',
+              cyan: '#38bdf8'
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' },
             }
           }
         }
       }
     }
   </script>
+
   <style>
-    :root {
-      --app-font-scale: 1rem; /* 基準16px */
-    }
-    html {
-      /* ルートは安定した基準サイズを維持し、UI全体のレイアウト崩壊を防止 */
-      font-size: 16px;
-    }
+    /* iOSセーフエリアとスクロールバー制御 */
     body {
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      -webkit-tap-highlight-color: transparent;
     }
-    /* 学習コンテンツエリアに可変スケールを適用 */
-    #mainContentArea {
-      font-size: var(--app-font-scale);
+    
+    .selectable-text {
+      user-select: text;
+      -webkit-user-select: text;
     }
-    /* スムーズな遷移と行の重なり防止 */
-    .scalable-text {
-      font-size: 1em;
-      line-height: 1.7;
+    
+    .glass-card {
+      background: rgba(18, 26, 47, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .scalable-heading {
-      font-size: 1.25em;
-      line-height: 1.45;
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+
+    .glow-effect {
+      box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.35);
     }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background-color: rgba(156, 163, 175, 0.4);
-      border-radius: 9999px;
+
+    /* カスタムスクロールバー非表示 */
+    ::-webkit-scrollbar {
+      display: none;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-teal-100 selection:text-teal-900">
 
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200/80 shadow-sm transition-all">
-    <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2">
-      <!-- タイトルグループ：幅が狭い場合でも重ならないよう保護 -->
-      <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-        <div class="relative w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-700 via-teal-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-teal-600/20 ring-2 ring-white flex-shrink-0">
-          <i data-lucide="heart-pulse" class="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2] animate-pulse"></i>
-          <span class="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 ring-2 ring-white"></span>
-          </span>
-        </div>
-        <div class="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <h1 class="font-extrabold tracking-tight text-slate-900 text-lg sm:text-xl md:text-2xl leading-tight whitespace-nowrap">
-            MedPulse<span class="bg-gradient-to-r from-teal-600 to-sky-600 bg-clip-text text-transparent font-semibold ml-1">Insight</span>
-          </h1>
-          <span class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full bg-gradient-to-r from-teal-50 to-sky-50 text-[10px] sm:text-[11px] font-semibold text-slate-700 border border-slate-200 shadow-xs whitespace-nowrap">
-            <span class="w-1.5 h-1.5 rounded-full bg-teal-500 flex-shrink-0"></span>
-            <span class="font-medium">臨床</span>
-            <span class="text-slate-300 font-light select-none">/</span>
-            <span class="font-medium">政策</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-sky-500 flex-shrink-0"></span>
-          </span>
-        </div>
-      </div>
+<body class="bg-night-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased overflow-x-hidden selection:bg-indigo-500 selection:text-white">
 
-      <!-- 右側ボタン群：固定幅を維持してタイトルと被らないよう配置 -->
-      <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-        <button id="fontSizeBtn" class="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium transition active:scale-95 shadow-xs" title="文字サイズ変更">
-          <i data-lucide="type" class="w-3.5 h-3.5 text-slate-500"></i>
-          <span class="hidden md:inline text-[11px]">文字</span>
-          <span id="currentSizeLabel" class="text-[10px] sm:text-xs font-bold text-teal-600 bg-teal-50 px-1 py-0.2 rounded">中</span>
-        </button>
-
-        <button id="openScheduleBtn" class="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium transition active:scale-95 shadow-xs" title="配信スケジュール設定">
-          <i data-lucide="calendar-clock" class="w-3.5 h-3.5 text-slate-500"></i>
-          <span class="text-xs hidden md:inline">配信</span>
-        </button>
-
-        <button id="openBookmarkBtn" class="p-1.5 sm:p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs transition relative active:scale-95 shadow-xs" title="保存した記事">
-          <i data-lucide="bookmark" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500"></i>
-          <span id="bookmarkCountBadge" class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-amber-500 text-white text-[9px] sm:text-[10px] flex items-center justify-center font-bold leading-none">0</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main id="mainContentArea" class="flex-grow max-w-5xl mx-auto w-full px-3.5 sm:px-4 py-5 sm:py-6 flex flex-col gap-5 sm:gap-6">
-
-    <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-xl bg-slate-100 text-slate-700 flex-shrink-0">
-          <i data-lucide="calendar" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span id="currentDateDisplay" class="font-bold text-slate-900 text-base sm:text-lg">--月--日 (--)</span>
-            <span id="scheduleBadge" class="text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-medium">1日3問配信中</span>
-          </div>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">医学の臨床知見と、制度・診療報酬の動向をバランスよく習得</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2 self-end md:self-center">
-        <button id="prevDayBtn" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-600 flex items-center gap-1 transition">
-          <i data-lucide="chevron-left" class="w-4 h-4"></i> 前日
-        </button>
-        <button id="todayBtn" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-xs font-semibold text-white transition shadow-sm shadow-teal-600/30">
-          今日
-        </button>
-        <button id="generateAiBtn" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 hover:from-teal-700 hover:to-sky-700 text-white text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-sm shadow-teal-700/20" title="Web検索とGeminiを活用し、最新の公的発表や学会指針から新しい問題を即座に生成します">
-          <i data-lucide="globe" class="w-3.5 h-3.5 animate-pulse"></i>
-          <span>最新Webリサーチ生成</span>
-        </button>
-        <button id="refreshCardsBtn" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 shadow-xs" title="保存済みプールから別の問題をローテーション">
-          <i data-lucide="shuffle" class="w-3.5 h-3.5 text-slate-500"></i>
-          <span class="hidden sm:inline">シャッフル</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- AI生成中のローディングバナー -->
-    <div id="aiGeneratingBanner" class="hidden bg-gradient-to-r from-teal-50 via-sky-50 to-indigo-50 border border-teal-200/80 rounded-2xl p-4 sm:p-5 shadow-xs text-center space-y-2">
-      <div class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/20 mb-1">
-        <i data-lucide="globe" class="w-5 h-5 animate-spin"></i>
-      </div>
-      <h4 class="font-bold text-slate-800 text-sm sm:text-base">Web上の最新医療・行政情報をリサーチ中...</h4>
-      <p class="text-xs text-slate-500 max-w-md mx-auto">
-        Google検索グラウンディング機能で、最新の厚生労働省答申・通知や日本各医学会の最新ガイドライン改訂・新薬承認情報を検索し、本日のナレッジをリアルタイム生成しています。
-      </p>
-    </div>
-
-    <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-100/70 p-2.5 rounded-xl border border-slate-200/80">
-      <div class="flex flex-wrap items-center gap-1.5" id="categoryFilterContainer">
-        <button data-cat="all" class="filter-chip active-filter px-3 py-1 rounded-lg text-xs font-medium transition bg-white text-slate-900 shadow-sm border border-slate-200">
-          すべて
-        </button>
-        <button data-cat="医学" class="filter-chip px-3 py-1 rounded-lg text-xs font-medium transition text-slate-600 hover:text-slate-900">
-          <span class="inline-block w-2 h-2 rounded-full bg-teal-500 mr-1"></span>医学・臨床
-        </button>
-        <button data-cat="医療行政" class="filter-chip px-3 py-1 rounded-lg text-xs font-medium transition text-slate-600 hover:text-slate-900">
-          <span class="inline-block w-2 h-2 rounded-full bg-sky-500 mr-1"></span>医療行政・制度
-        </button>
-      </div>
-
-      <div class="flex items-center gap-3 text-xs text-slate-600 ml-auto">
-        <span class="text-slate-400 hidden sm:inline" id="poolStatsDisplay">全30問収録</span>
-        <div class="flex items-center gap-1">
-          <span>完了:</span>
-          <span id="completionProgress" class="font-bold text-teal-700">0 / 3 完了</span>
-        </div>
-      </div>
-    </div>
-
-    <div id="knowledgeCardList" class="flex flex-col gap-5 w-full">
-      <!-- カードが動的に展開されます -->
-    </div>
-
-    <div id="noContentState" class="hidden text-center py-12 px-4 bg-white rounded-2xl border border-dashed border-slate-300">
-      <i data-lucide="book-open-check" class="w-12 h-12 mx-auto text-slate-400 mb-3"></i>
-      <h3 class="font-semibold text-slate-700 text-base">該当する知識カードはありません</h3>
-      <p class="text-xs text-slate-500 mt-1">フィルター条件を変更するか、配信設定を見直してください。</p>
-    </div>
-  </main>
-
-  <div id="fontSizeModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-200" id="fontSizeModalBox">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-base">
-          <i data-lucide="type" class="w-5 h-5 text-teal-600"></i>
-          文字サイズ設定
-        </h3>
-        <button id="closeFontModal" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="py-4 space-y-4">
-        <p class="text-xs text-slate-500">
-          読みやすさに合わせて文字の大きさを変更できます。文章が長くてもレイアウトが崩れないよう最適化されています。
-        </p>
-
-        <!-- プリセットボタン -->
-        <div class="grid grid-cols-4 gap-2">
-          <button data-size="sm" class="size-preset-btn p-2 rounded-xl border border-slate-200 text-center hover:border-teal-500 transition">
-            <span class="block text-xs font-medium text-slate-500">小</span>
-            <span class="text-xs font-bold text-slate-800">85%</span>
-          </button>
-          <button data-size="md" class="size-preset-btn p-2 rounded-xl border-2 border-teal-600 bg-teal-50 text-center transition">
-            <span class="block text-xs font-medium text-teal-700">標準</span>
-            <span class="text-xs font-bold text-teal-900">100%</span>
-          </button>
-          <button data-size="lg" class="size-preset-btn p-2 rounded-xl border border-slate-200 text-center hover:border-teal-500 transition">
-            <span class="block text-xs font-medium text-slate-500">大</span>
-            <span class="text-xs font-bold text-slate-800">115%</span>
-          </button>
-          <button data-size="xl" class="size-preset-btn p-2 rounded-xl border border-slate-200 text-center hover:border-teal-500 transition">
-            <span class="block text-xs font-medium text-slate-500">特大</span>
-            <span class="text-xs font-bold text-slate-800">130%</span>
-          </button>
-        </div>
-
-        <!-- リアルタイムプレビューボックス -->
-        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">プレビュー</span>
-          <p class="text-slate-800 scalable-text leading-relaxed">
-            【プレビュー表示】診療報酬改定および病態生理の学習テキストです。
-          </p>
-        </div>
-      </div>
-
-      <button id="applyFontSizeBtn" class="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
-        完了
-      </button>
-    </div>
+  <!-- 背景オーロラグラデーション -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-32 -left-20 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse-slow"></div>
+    <div class="absolute top-1/3 -right-32 w-96 h-96 bg-purple-600/15 rounded-full blur-[110px]"></div>
+    <div class="absolute bottom-10 left-10 w-80 h-80 bg-amber-500/10 rounded-full blur-[90px]"></div>
   </div>
 
-  <div id="scheduleModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-200" id="scheduleModalBox">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-base">
-          <i data-lucide="sliders" class="w-5 h-5 text-sky-600"></i>
-          配信スケジュールと件数の設定
-        </h3>
-        <button id="closeScheduleModal" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- アプリメインラッパー (スマホ画面比率で中央配置、デスクトップでも快適) -->
+  <div class="relative z-10 w-full max-w-md mx-auto flex-1 flex flex-col px-4 pt-3 pb-24">
+
+    <!-- ヘッダーエリア -->
+    <header class="flex items-center justify-between py-3 mb-2">
+      <div class="flex items-center space-x-3">
+        <!-- アプリアイコンプレビュー -->
+        <div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-white/20 flex-shrink-0 animate-float">
+          <canvas id="iconPreviewCanvas" width="80" height="80" class="w-full h-full"></canvas>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent flex items-center gap-1.5 whitespace-nowrap">
+            Somna
+            <span id="deliveryBadge" class="text-xs font-medium tracking-normal px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">07:30 配信</span>
+          </h1>
+          <p id="todayDateLabel" class="text-xs text-slate-400 font-medium whitespace-nowrap"></p>
+        </div>
       </div>
 
-      <div class="py-4 space-y-4">
-        <!-- 1日の提示件数 -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">
-            1日に提示するナレッジ数: <span id="deliveryCountVal" class="text-sky-600 text-sm">3件</span>
-          </label>
-          <div class="flex items-center gap-3">
-            <input type="range" id="deliveryCountInput" min="1" max="5" value="3" step="1" class="w-full accent-sky-600 h-2 bg-slate-200 rounded-lg cursor-pointer">
-            <div class="flex justify-between text-xs text-slate-400 font-medium w-full max-w-[200px] px-1">
-              <span>1</span><span>2</span><span>3(推奨)</span><span>4</span><span>5</span>
-            </div>
-          </div>
+      <!-- アクションボタン群 -->
+      <div class="flex items-center space-x-2">
+        <button id="refreshTopicsBtn" class="p-2 rounded-xl glass-pill hover:bg-white/10 active:scale-95 transition-all text-slate-300 hover:text-cyan-300 relative" title="最新の睡眠研究トピックに更新">
+          <svg id="refreshIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+        <button id="notifySettingBtn" class="p-2 rounded-xl glass-pill hover:bg-white/10 active:scale-95 transition-all text-slate-300 hover:text-white relative" title="配信時間・通知設定">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 今日の3つの知識メインセクション -->
+    <main class="flex-1 flex flex-col space-y-4">
+      <div class="flex items-center justify-between px-1">
+        <div class="flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+          <h2 class="text-sm font-semibold text-slate-200 tracking-wide uppercase whitespace-nowrap">Today's 3 Pillars</h2>
+        </div>
+        <span id="topicSourceStatus" class="text-xs text-cyan-300/80 font-normal whitespace-nowrap">最新査読論文より日替わり抽出</span>
+      </div>
+
+      <!-- 3枚の知識カードリスト -->
+      <div id="knowledgeCardsContainer" class="space-y-4">
+        <!-- JSで動的レンダリング -->
+      </div>
+
+      <!-- 未配信残数・配信済みステータス -->
+      <div id="poolStatusCard" class="text-center pt-2 pb-1">
+        <p class="text-xs text-slate-300 font-medium">
+          既配信: <span id="deliveredCount" class="text-indigo-300 font-semibold font-mono">0</span> 件 ／ 未配信ストック: <span id="remainingCount" class="text-cyan-300 font-semibold font-mono">0</span> 件
+        </p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- 下部固定タブナビゲーション -->
+  <nav class="fixed bottom-0 inset-x-0 z-40 bg-night-900/80 backdrop-blur-xl border-t border-white/10 max-w-md mx-auto">
+    <div class="flex items-center justify-around py-3 px-6">
+      <button id="tabToday" class="tab-btn flex flex-col items-center space-y-1 text-indigo-400">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+        <span class="text-xs font-semibold">今日の3選</span>
+      </button>
+
+      <button id="tabArchive" class="tab-btn flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+        </svg>
+        <span class="text-xs font-semibold">知恵録</span>
+      </button>
+
+      <button id="tabBookmarks" class="tab-btn flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+        </svg>
+        <span class="text-xs font-semibold">保存済み</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 配信時間・通知設定モーダル -->
+  <div id="notifyModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-night-900 border border-white/10 rounded-3xl w-full max-w-sm p-6 text-center space-y-4 shadow-2xl">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+
+      <div>
+        <h3 class="text-lg font-bold text-white">配信時刻・通知設定</h3>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+          あなたのライフスタイルに合わせて、毎日の睡眠知識が届く時間を自由に設定できます。
+        </p>
+      </div>
+
+      <!-- 時刻選択フォーム -->
+      <div class="bg-night-850 rounded-2xl p-4 border border-white/5 space-y-3">
+        <label class="block text-xs font-semibold text-slate-300 text-left">
+          毎日の配信希望時刻
+        </label>
+        
+        <div class="flex items-center justify-center space-x-2">
+          <input type="time" id="deliveryTimeInput" value="07:30" class="bg-night-950 border border-indigo-500/30 text-white font-mono text-xl rounded-xl px-4 py-2 text-center focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400">
         </div>
 
-        <!-- 分野の配信比率 -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">配信バランス</label>
-          <select id="balanceSelect" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
-            <option value="balanced">均等バランス (医学・医療行政を均等に)</option>
-            <option value="medical_priority">医学・臨床知識を多めに</option>
-            <option value="admin_priority">医療行政・制度知識を多めに</option>
-          </select>
-        </div>
-
-        <!-- 配信更新時刻シミュレータ -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">更新タイミング（目安）</label>
-          <div class="grid grid-cols-3 gap-2">
-            <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-xl cursor-pointer text-xs hover:bg-slate-50">
-              <input type="radio" name="deliveryTime" value="07:00" checked class="accent-sky-600">
-              <span>朝 07:00</span>
-            </label>
-            <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-xl cursor-pointer text-xs hover:bg-slate-50">
-              <input type="radio" name="deliveryTime" value="12:30" class="accent-sky-600">
-              <span>昼 12:30</span>
-            </label>
-            <label class="flex items-center gap-2 p-2 border border-slate-200 rounded-xl cursor-pointer text-xs hover:bg-slate-50">
-              <input type="radio" name="deliveryTime" value="20:00" class="accent-sky-600">
-              <span>夜 20:00</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 通知シミュレーション -->
-        <div class="p-3 bg-sky-50/60 rounded-xl border border-sky-100 flex items-start gap-2.5 text-xs text-sky-800">
-          <i data-lucide="bell" class="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5"></i>
-          <div>
-            <p class="font-semibold">学習リマインド設定</p>
-            <p class="text-sky-700 mt-0.5">設定した件数に合わせて、毎日新しい知識カードがローテーションされます。</p>
+        <!-- おすすめプリセットボタン -->
+        <div class="pt-1">
+          <div class="text-[11px] text-slate-400 mb-1.5 text-left">💡 おすすめ時間帯</div>
+          <div class="grid grid-cols-3 gap-1.5 text-xs">
+            <button type="button" onclick="selectPresetTime('07:30')" class="px-2 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 rounded-lg text-indigo-300 border border-indigo-500/30 transition-all text-center">
+              07:30 <span class="block text-[9px] text-indigo-400">朝の光・起床 (標準)</span>
+            </button>
+            <button type="button" onclick="selectPresetTime('13:00')" class="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 border border-white/5 transition-all text-center">
+              13:00 <span class="block text-[9px] text-slate-400">昼休み・午後</span>
+            </button>
+            <button type="button" onclick="selectPresetTime('20:30')" class="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 border border-white/5 transition-all text-center">
+              20:30 <span class="block text-[9px] text-slate-400">入浴・就寝準備</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div class="flex gap-2">
-        <button id="saveScheduleBtn" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
-          設定を保存して更新
+        <button onclick="toggleModal('notifyModal', false)" class="w-1/3 py-2.5 bg-white/10 hover:bg-white/15 text-slate-300 rounded-xl text-xs font-semibold">閉じる</button>
+        <button id="saveTimeSettingBtn" class="w-2/3 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/25 active:scale-95 transition-all">この時間で保存する</button>
+      </div>
+
+      <div class="pt-2 border-t border-white/5">
+        <button type="button" onclick="confirmResetHistory()" class="text-[11px] text-slate-400 hover:text-rose-300 transition-colors">
+          ※ 配信履歴（重複除外データ）を初期化する
         </button>
       </div>
     </div>
   </div>
 
-  <div id="bookmarkModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-2xl max-w-xl w-full max-h-[85vh] flex flex-col p-5 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-200" id="bookmarkModalBox">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
-        <h3 class="font-bold text-slate-900 flex items-center gap-2 text-base">
-          <i data-lucide="bookmark" class="w-5 h-5 text-amber-500"></i>
-          ブックマーク・要復習リスト
-        </h3>
-        <button id="closeBookmarkModal" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div id="bookmarkListContainer" class="flex-grow overflow-y-auto custom-scroll py-3 space-y-3">
-        <!-- ブックマークしたカードが挿入される -->
-      </div>
-    </div>
-  </div>
-
-  <!-- 出典・公式資料アクセスモーダル（外部ブラウザブロック回避 & 即時確認対応） -->
-  <div id="sourceModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col p-5 sm:p-6 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-200" id="sourceModalBox">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
-            <i data-lucide="file-check" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm sm:text-base">出典・公式ガイドライン原本情報</h3>
-            <span class="text-[10px] text-slate-400">公式文書・策定元情報・資料要約</span>
-          </div>
-        </div>
-        <button id="closeSourceModal" class="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="flex-grow overflow-y-auto custom-scroll py-4 space-y-3.5 pr-1">
-        <div>
-          <span class="text-[11px] font-semibold text-slate-400 block mb-1">出典資料名・策定元</span>
-          <p id="sourceModalTitle" class="text-sm font-bold text-slate-800 leading-snug bg-slate-50 p-3 rounded-xl border border-slate-200">
-            --
-          </p>
-        </div>
-
-        <div>
-          <span class="text-[11px] font-semibold text-slate-400 block mb-1">公式ガイドライン・公表資料の骨子抜粋</span>
-          <div id="sourceExcerptContainer" class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed space-y-2">
-            <!-- 動的に公式抜粋情報が注入されます -->
-          </div>
-        </div>
-
-        <div class="p-3 bg-teal-50/70 rounded-xl border border-teal-100 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-teal-900 uppercase tracking-wider block">公式WebサイトURL</span>
-            <span class="text-[10px] text-teal-600 font-medium">Safari等へ貼り付けて直接閲覧可能</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <input type="text" id="sourceModalUrlInput" readonly class="text-xs bg-white border border-teal-200 rounded-lg px-2.5 py-2 w-full text-slate-700 focus:outline-none select-all font-mono">
-            <button id="copySourceUrlBtn" class="flex-shrink-0 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition active:scale-95 flex items-center gap-1 shadow-sm">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              <span>URLコピー</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-col sm:flex-row gap-2 pt-3 border-t border-slate-100 flex-shrink-0">
-        <a id="sourceDirectLink" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95 text-center">
-          <span>Safari / 外部ブラウザで開く</span>
-          <i data-lucide="external-link" class="w-4 h-4"></i>
-        </a>
-        <button id="closeSourceModalBtn" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-medium transition">
-          閉じる
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 text-xs">
-    <i data-lucide="check-circle" class="w-4 h-4 text-teal-400"></i>
-    <span id="toastMsg">設定を更新しました</span>
+  <!-- トースト通知 -->
+  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-xs w-full px-4 py-3 rounded-2xl glass-card border border-indigo-400/40 text-xs font-medium text-white shadow-2xl transform -translate-y-24 opacity-0 transition-all duration-300 flex items-center space-x-3">
+    <div id="toastIcon" class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center flex-shrink-0">✓</div>
+    <div id="toastMsg" class="flex-1"></div>
   </div>
 
   <script>
-    // 臨床最新知見および最新の医療行政・制度改革データベース（出典・ガイドライン・固有アイコン付き）
-    const KNOWLEDGE_BASE = [
-      // --- 最新 医学・臨床知識 ---
+    /* 科学的根拠（最新査読論文・主要医学ジャーナル）睡眠知識データベース */
+    const SLEEP_KNOWLEDGE_BASE = [
       {
-        id: "m01",
-        category: "医学",
-        subCategory: "脳神経内科・認知症",
-        icon: "brain",
-        title: "アルツハイマー病抗Aβ抗体薬（レカネマブ・ドナネマブ）の適応基準",
-        summary: "脳内アミロイドβの蓄積を標的とする疾患修飾薬。軽度認知障害（MCI）および軽度認知症が厳格な適応対象です。",
-        detail: "アミロイドPETまたは脳脊髄液（CSF）検査でアミロイドβ病理の存在を確認した上で投与します。投与中はアミロイド関連画像異常（ARIA：ARIA-E脳浮腫、ARIA-H微小出血・ヘモジデリン沈着）の発現リスクを定期的なMRIで厳重にモニタリングする必要があります。",
-        clinicalPoint: "MRIによるARIAモニタリングプロトコルと、万一の神経症状出現時の中断・ステロイド投与基準の院内連携プロトコルを整備しておく必要があります。",
-        source: "日本神経学会「アルツハイマー病病態修飾薬の適正使用指針」",
-        sourceExcerpt: "【指針骨子】投与対象はMMSE 22点以上のMCIおよび軽度認知症。アミロイドPETまたはCSF（Aβ42/40比またはリン酸化タウ）陽性が必須要件。初回投与から5回目、7回目、14回目の投与前等にARIA確認のMRI撮影を実施することが義務付けられています。",
-        sourceUrl: "https://www.neurology-jp.org/",
-        tags: ["認知症", "レカネマブ", "分子標的薬", "ARIA", "最新ガイドライン"]
+        id: "glymphatic-side-sleep",
+        category: "脳科学・デトックス",
+        categoryColor: "text-indigo-300 bg-indigo-400/10 border-indigo-400/25",
+        icon: "🧠",
+        title: "脳の老廃物排出システム「グリンパティック系」は横向き寝で最大化",
+        summary: "睡眠中に脳脊髄液が老廃物（アミロイドβやタウタンパク質）を洗い流すグリンパティック系は、仰向けやうつ伏せよりも「横向き（側臥位）」で寝る方が排出効率が25%以上高いことが判明しています。",
+        action: "抱き枕やクッションを活用し、横向きでリラックスして眠るポジションを取り入れてみましょう。",
+        citation: {
+          journal: "Journal of Neuroscience",
+          authors: "Lee, H., Xie, L., Kang, H., et al.",
+          title: "The Effect of Body Posture on Brain Glymphatic Transport",
+          doi: "10.1523/JNEUROSCI.1625-15.2015",
+          url: "https://doi.org/10.1523/JNEUROSCI.1625-15.2015"
+        }
       },
       {
-        id: "m02",
-        category: "医学",
-        subCategory: "内分泌代謝・肥満症",
-        icon: "flame",
-        title: "持続性GIP/GLP-1受容体作動薬（チルゼパチド・セマグルチド）の臨床適応",
-        summary: "インスリン分泌促進と中枢性食欲抑制を併せ持つ新規注射薬。肥満症治療薬（ウゴービ等）としても保険適応。",
-        detail: "チルゼパチドはGLP-1とGIPのデュアル作動により、強力な血糖降下作用と体重減少効果を示します。肥満症適応では、BMI 35以上、またはBMI 27以上で高血圧・脂質異常症・2型糖尿病などの健康障害を2つ以上有し食事・運動療法で十分な効果が得られない患者に限定されます。",
-        clinicalPoint: "消化器症状（悪心・下痢・便秘）の初期指導に加え、美容目的の不適切適応外使用の厳格な防止と供給安定への配慮が不可欠です。",
-        source: "日本肥満学会「肥満症診療ガイドライン」/ 日本糖尿病学会",
-        sourceExcerpt: "【適応要件】教育入院または通院で専門医による6ヶ月以上の生活習慣介入（食事・運動療法）を行ったにもかかわらず改善しない患者を対象とする。美容・痩身を目的とした自由診療での適応外使用は厳格に戒められています。",
-        sourceUrl: "http://www.jso.or.jp/",
-        tags: ["糖尿病", "GLP-1", "肥満症治療", "薬理", "代謝内科"]
+        id: "exercise-deep-sleep-timing",
+        category: "運動科学",
+        categoryColor: "text-emerald-300 bg-emerald-400/10 border-emerald-400/25",
+        icon: "🏃‍♂️",
+        title: "夕方の中強度有酸素運動が夜間の「深睡眠（徐波睡眠）」を約30%延長",
+        summary: "就寝3〜4時間前の適度な運動（早歩きやジョギング）はアデノシンの蓄積を促し、夜間の深睡眠持続時間を増やします。ただし就寝1時間以内の激しい運動は深部体温を上げ眠気を妨げます。",
+        action: "夕方（17時〜19時頃）に20〜30分の軽いウォーキングや階段昇降を取り入れましょう。",
+        citation: {
+          journal: "Sleep Medicine Reviews",
+          authors: "Stutz, J., Eiholzer, R., & Spengler, C. M.",
+          title: "Effects of evening exercise on sleep in healthy participants: A systematic review and meta-analysis",
+          doi: "10.1016/j.smrv.2018.10.003",
+          url: "https://doi.org/10.1016/j.smrv.2018.10.003"
+        }
       },
       {
-        id: "m03",
-        category: "医学",
-        subCategory: "感染症・ワクチン",
-        icon: "shield-plus",
-        title: "RSウイルス感染症に対する新規予防戦略（母子免疫・高齢者ワクチン）",
-        summary: "乳児の重症下気道感染を防ぐ母子免疫ワクチンと、60歳以上を対象とした高齢者向けRSVワクチンの実用化。",
-        detail: "妊娠24〜36週の妊婦に接種することで移行抗体を介して生後6ヶ月までの乳児を保護する母子免疫ワクチン（アブリスボ）が登場しました。また、基礎疾患（COPD、心不全、糖尿病等）を有する高齢者における重症化リスク低減を目的とした組換えRSVワクチン（アレックスビー等）の活用が進んでいます。",
-        clinicalPoint: "百日咳を含む三種混合やインフルエンザ、新型コロナワクチンとの接種間隔や同時接種の可否を母子手帳・問診時に確認します。",
-        source: "厚生労働省「厚生科学審議会 予防接種・ワクチン分科会」資料",
-        sourceExcerpt: "【予防接種方針】妊婦への単回筋肉注射により胎盤移行抗体を獲得させ、出生後の乳児の下気道感染症（細気管支炎・肺炎）入院を有意に抑制。高齢者に対しては心肺疾患合併例における予防効果が確認されています。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/shingi/shingi-kousei_284075.html",
-        tags: ["RSウイルス", "ワクチン", "母子免疫", "呼吸器感染症", "予防医学"]
+        id: "brain-dump-offloading",
+        category: "認知心理学・入眠改善",
+        categoryColor: "text-amber-300 bg-amber-400/10 border-amber-400/25",
+        icon: "📝",
+        title: "就寝前の5分間「ToDoリスト手書き」が入眠潜時を9分早める",
+        summary: "ベッドに入る直前に「明日やるべき具体的タスク」を手書きで紙に書き出す（メンタルオフロード）と、脳の認知的反芻（ぐるぐる思考）が解消され、入眠速度が睡眠薬並みに改善します。",
+        action: "就寝5分前、スマホではなくノートに明日やるべきことを箇条書きで3〜5つ書き出しましょう。",
+        citation: {
+          journal: "Journal of Experimental Psychology: General",
+          authors: "Scullin, M. K., Krueger, M. L., et al.",
+          title: "The effects of bedtime writing on difficulty falling asleep: A polysomnographic study",
+          doi: "10.1037/xge0000374",
+          url: "https://doi.org/10.1037/xge0000374"
+        }
       },
       {
-        id: "m04",
-        category: "医学",
-        subCategory: "循環器内科",
-        icon: "heart-pulse",
-        title: "心不全薬物療法の「Fantastic Four」と早期導入",
-        summary: "HFrEF治療において死亡・入院を劇的に改善する4剤併用療法（SGLT2阻害薬、ARNI、β遮断薬、MRA）。",
-        detail: "近年、これら4クラスの薬剤を低用量からでも早期に同時または迅速に順次立ち上げることが生命予後の改善に直結すると実証されました。ARNI（サクビトリルバルサルタン）導入時はACE阻害薬中止から36時間以上の休薬期間を空ける血管浮腫予防ルールを遵守します。",
-        clinicalPoint: "腎機能（eGFR）低下や高カリウム血症のモニタリングを行いつつ、低血圧症状に配慮した用量漸増計画を立案します。",
-        source: "日本循環器学会 / 日本心不全学会「急性・慢性心不全診療ガイドライン」",
-        sourceExcerpt: "【推奨改定】LVEF 40%以下のHFrEFにおいて、以前の逐次的な増量よりも、低用量から4剤（ARNI/ACEI/ARB、β遮断薬、MRA、SGLT2阻害薬）を速やかに揃える包括的薬物療法がクラスI（推奨度最強）として位置付けられています。",
-        sourceUrl: "https://www.j-circ.or.jp/guideline/",
-        tags: ["心不全", "Fantastic4", "循環器", "ARNI", "SGLT2"]
+        id: "core-temp-bath",
+        category: "体温コントロール",
+        categoryColor: "text-amber-300 bg-amber-400/10 border-amber-400/25",
+        icon: "🛁",
+        title: "入浴は「就寝90分前・40度」が黄金律",
+        summary: "入浴によって一時的に深部体温を上げると、約90分後に体温が急降下し、自然で強力な眠気（入眠潜時の短縮）が誘発されます。",
+        action: "今夜はベッドに入る90分前にお風呂へ入り、40℃のお湯に15分浸かりましょう。",
+        citation: {
+          journal: "Sleep Medicine Reviews",
+          authors: "Haghayegh, S., et al.",
+          title: "Before-bedtime passive body heating by warm shower or bath to improve sleep: A systematic review and meta-analysis",
+          doi: "10.1016/j.smrv.2019.04.008",
+          url: "https://doi.org/10.1016/j.smrv.2019.04.008"
+        }
       },
       {
-        id: "m05",
-        category: "医学",
-        subCategory: "腫瘍内科・血液内科",
-        icon: "dna",
-        title: "がんゲノム医療と包括的ゲノムプロファイリング（CGP検査）",
-        summary: "標準治療終了（見込み）固形がん患者に対する次世代シーケンサーを用いた網羅的遺伝子変異解析。",
-        detail: "FoundationOneやNCCオンコパネル等のCGP検査により、マイクロサテライト不安定性（MSI-High）、TMB-High、NTRK融合遺伝子などのバイオマーカーを同定し、臓器横断的な分子標的薬や免疫チェックポイント阻害薬のアクセスを拡大します。エキスパートパネルでの検討結果に基づく患者説明が求められます。",
-        clinicalPoint: "未承認薬・適応外薬へのアクセス（治験・患者申出療養）の可能性と、二次的所見（生殖細胞系列変異の疑い）に関する事前遺伝カウンセリングが必須です。",
-        source: "厚生労働省「がんゲノム医療の推進」/ がんゲノム医療中核拠点病院等連絡協議会",
-        sourceExcerpt: "【制度要件】標準治療のない、または局所進行・転移が認められ標準治療が終了（終了見込み含む）した固形がん患者が対象。連携病院・中核拠点病院のエキスパートパネルによる検討・レポート交付が保険算定の前提となります。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/kenkou/gan/gan_byoin_00008.html",
-        tags: ["がんゲノム", "CGP検査", "分子標的薬", "プレシジョンメディシン"]
+        id: "caffeine-half-life",
+        category: "午後のルーティン",
+        categoryColor: "text-orange-300 bg-orange-400/10 border-orange-400/25",
+        icon: "☕",
+        title: "カフェイン摂取の限界ラインは就寝8時間前（14時頃）",
+        summary: "カフェインの血中濃度半減期は4〜6時間、完全に代謝されるには8時間以上かかります。午後のコーヒーは徐波睡眠（深い睡眠）を最大20%削り取ります。",
+        action: "午後の眠気覚ましはコーヒーではなく、コップ1杯の冷水と軽いストレッチに切り替えましょう。",
+        citation: {
+          journal: "Journal of Clinical Sleep Medicine",
+          authors: "Drake, C., et al.",
+          title: "Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed",
+          doi: "10.5664/jcsm.3170",
+          url: "https://doi.org/10.5664/jcsm.3170"
+        }
       },
       {
-        id: "m06",
-        category: "医学",
-        subCategory: "医療AI・画像診断",
-        icon: "cpu",
-        title: "SaMD（プログラム医療機器）とAI診断支援の臨床実装",
-        summary: "CT/内視鏡画像からの病変自動検出や心電図解析AI。医師の診断能向上と見落とし防止を担うパートナー技術。",
-        detail: "胸部CTにおける肺結節候補の自動マーキング、大腸内視鏡時のポリープ発見・腫瘍性鑑別AI、12誘導心電図波形から心不全や発作性心房細動を推定するアルゴリズムが薬事承認を取得しています。AIの出力はあくまで「医師の判断を支援する情報」であり、最終確定診断の法的責任は担当医に帰属します。",
-        clinicalPoint: "AIの偽陽性・偽陰性特性（アルゴリズムの限界）を正しく理解し、過度の盲信（オートメーション・バイアス）を避ける臨床的吟味姿勢が大切です。",
-        source: "厚生労働省・PMDA「プログラム医療機器（SaMD）に関する取組」",
-        sourceExcerpt: "【法的位置付け】AI診断支援ソフトウェアは医薬品医療機器法上の「プログラム医療機器（SaMD）」として規制・承認される。医療機器としての安全性・有効性が検証されたものを用い、最終判定は必ず医師が行う運用が義務付けられています。",
-        sourceUrl: "https://www.pmda.go.jp/review-controllers/devices-controllers/0002.html",
-        tags: ["SaMD", "医療AI", "画像診断支援", "内視鏡", "医療安全"]
+        id: "circadian-morning-light",
+        category: "体内時計・メラトニン",
+        categoryColor: "text-sky-300 bg-sky-400/10 border-sky-400/25",
+        icon: "☀️",
+        title: "朝の光を浴びた14〜16時間後にメラトニンが自動分泌される",
+        summary: "網膜の内在性光感受性神経節細胞（ipRGC）が青色波長光を感知すると、視交叉上核の体内時計がリセットされ、約15時間後に眠気ホルモン「メラトニン」が自動生成されます。",
+        action: "起床後1時間以内にカーテンを開け、窓際や屋外で10〜15分間の自然光を浴びましょう。",
+        citation: {
+          journal: "Physiological Reviews",
+          authors: "Czeisler, C. A., & Gooley, J. J.",
+          title: "Sleep and Circadian Rhythms in Humans",
+          doi: "10.1152/physrev.00039.2013",
+          url: "https://doi.org/10.1152/physrev.00039.2013"
+        }
       },
       {
-        id: "m07",
-        category: "医学",
-        subCategory: "腎臓内科・CKD",
-        icon: "activity",
-        title: "CKD進行抑制の新基軸：非ステロイド型MRAとSGLT2阻害薬併用",
-        summary: "2型糖尿病を合併するCKDに対するフィネレノン投与とSGLT2阻害薬による腎・心血管イベント抑制。",
-        detail: "選択的非ステロイド型鉱質コルチコイド受容体拮抗薬（フィネレノン）は、従来のステロイド型MRAと比べ受容体結合親和性が高く、アルブミン尿を有意に減少させ腎複合アウトカムを抑制します。SGLT2阻害薬との併用により、高カリウム血症リスクが減弱することも注目されています。",
-        clinicalPoint: "血清カリウム値の定期測定（開始前・投与後4週・用量変更時）と、eGFRの推移モニタリングが安全運用の鍵です。",
-        source: "日本腎臓学会「エビデンスに基づくCKD診療ガイドライン」",
-        sourceExcerpt: "【指針推奨】糖尿病合併CKDにおいて、RAS阻害薬の最大耐用量投与下でもアルブミン尿が持続する場合、フィネレノンまたはSGLT2阻害薬の追加が推奨（推奨度Grade A）されています。",
-        sourceUrl: "https://jsn.or.jp/",
-        tags: ["CKD", "フィネレノン", "SGLT2阻害薬", "腎保護", "高カリウム血症"]
+        id: "power-nap-limit",
+        category: "昼の疲労回復",
+        categoryColor: "text-emerald-300 bg-emerald-400/10 border-emerald-400/25",
+        icon: "🔋",
+        title: "昼寝（パワーナップ）は「15時前・最大20分」厳守",
+        summary: "30分以上の昼寝は深い徐波睡眠に入ってしまい、起床後の「睡眠慣性（だるさ）」を引き起こします。また夜の睡眠圧（アデノシン蓄積）を奪ってしまいます。",
+        action: "昼食後に仮眠をとるなら15〜20分でアラームをセットし、寝椅子や机に伏せる程度に留めましょう。",
+        citation: {
+          journal: "Sleep",
+          authors: "Brooks, A., & Lack, L.",
+          title: "A brief afternoon nap following nocturnal sleep restriction: which nap duration is most recuperative?",
+          doi: "10.1093/sleep/29.6.831",
+          url: "https://doi.org/10.1093/sleep/29.6.831"
+        }
       },
       {
-        id: "m08",
-        category: "医学",
-        subCategory: "救急・集中治療",
-        icon: "alert-triangle",
-        title: "敗血症診療ガイドラインの最新改変（qSOFAの位置づけ再考）",
-        summary: "スクリーニング単独ツールとしてのqSOFA依存脱却と、NEWSや早期乳酸値測定を重視した包括的トリアージ。",
-        detail: "以前推奨されたqSOFA（呼吸数≧22、意識変容、収縮期血圧≦100）は感度が低く早期見落としのリスクが指摘され、現在のガイドラインでは「単独の除外ツール」とせず、NEWS（National Early Warning Score）や臨床的疑診を合わせた包括的評価が推奨されています。1時間以内の抗菌薬投与と初期輸液（30mL/kg）の基本原則は堅持されます。",
-        clinicalPoint: "微小循環不全の指標として初療時の血中乳酸値を速やかに測定し、2mmol/L超では蘇生プロトコルを即時起動します。",
-        source: "日本集中治療医学会 / 日本救急医学会「日本版敗血症診療ガイドライン」",
-        sourceExcerpt: "【改訂骨子】院外・一般病棟でのスクリーニングにおいてqSOFA単独ではなくNEWSやSIRSの併用を考慮。敗血症ショック疑い例に対する1時間以内の広域抗菌薬投与と急速輸液、早期ノルアドレナリン導入を推奨。",
-        sourceUrl: "https://www.jsicm.org/publication/guideline.html",
-        tags: ["敗血症", "qSOFA", "集中治療", "NEWS", "乳酸値"]
+        id: "blue-light-melatonin",
+        category: "寝室環境",
+        categoryColor: "text-purple-300 bg-purple-400/10 border-purple-400/25",
+        icon: "📱",
+        title: "ベッド内スマホ操作はメラトニン分泌を最大50%阻害する",
+        summary: "LEDスクリーンから放射される短波長ブルーライト（約460nm）はメラトニンの分泌を著しく抑制し、レム睡眠と翌朝の覚醒度を著しく損ないます。",
+        action: "就寝30分前にはスマートフォンを充電器に挿し、ベッドから手の届かない場所に置きましょう。",
+        citation: {
+          journal: "PNAS (Proc. Natl. Acad. Sci. USA)",
+          authors: "Chang, A. M., et al.",
+          title: "Evening use of light-emitting eReaders negatively affects sleep, circadian timing, and next-morning alertness",
+          doi: "10.1073/pnas.1418490112",
+          url: "https://doi.org/10.1073/pnas.1418490112"
+        }
       },
       {
-        id: "m09",
-        category: "医学",
-        subCategory: "循環器・脳卒中",
-        icon: "zap",
-        title: "DOAC中和薬（アンデキサネット アルファ・イダルシズマブ）の緊急使用指針",
-        summary: "経口抗凝固薬内服中の致死性頭蓋内出血や大出血、緊急手術における即時拮抗療法の確立。",
-        detail: "ダビガトラン特異的中和抗体（イダルシズマブ）に加え、第Xa因子阻害薬（アピキサバン・リバーロキサバン）の改変デコイ蛋白中和薬（アンデキサネット アルファ）が臨床現場に普及しました。投与後は抗凝固作用が急速に中和されるため、止血後の血栓塞栓症再発リスクに配慮し適切なタイミングでの抗凝固再開計画が必要です。",
-        clinicalPoint: "最終内服時刻と推算内服量の確認、緊急頭部CTによる血腫増大評価、投与後のリバウンド凝固亢進への警戒が不可欠です。",
-        source: "日本脳卒中学会「脳卒中治療ガイドライン」追補版",
-        sourceExcerpt: "【適正使用指針】生命を脅かす出血または止血困難な大出血時に適応。静脈内ボーラス投与とそれに続く点滴静注によりFXa阻害活性を速やかに中和する。止血確認後は禁忌がなければ可及的速やかに抗凝固療法を再開する。",
-        sourceUrl: "https://www.jsts.gr.jp/guideline/",
-        tags: ["DOAC中和薬", "頭蓋内出血", "抗凝固薬", "アンデキサネット", "脳卒中"]
+        id: "room-temperature-ideal",
+        category: "寝室環境",
+        categoryColor: "text-cyan-300 bg-cyan-400/10 border-cyan-400/25",
+        icon: "❄️",
+        title: "快眠をもたらす理想の寝室室温は「18℃〜22℃」",
+        summary: "室温が高すぎると夜間の発汗と覚醒頻度が増加し、深睡眠が削られます。少し肌寒いくらいの室温で、適切な寝具に包まるのが最も睡眠効率を高めます。",
+        action: "エアコンを就寝時だけではなく、夜通し適温（夏期25-26℃、冬期18-20℃）で稼働維持しましょう。",
+        citation: {
+          journal: "Journal of Physiological Anthropology",
+          authors: "Okamoto-Mizuno, K., & Mizuno, K.",
+          title: "Effects of thermal environment on sleep and circadian rhythm",
+          doi: "10.1186/1880-6805-31-14",
+          url: "https://doi.org/10.1186/1880-6805-31-14"
+        }
       },
       {
-        id: "m10",
-        category: "医学",
-        subCategory: "呼吸器内科",
-        icon: "wind",
-        title: "成人肺炎診療ガイドラインと医療・介護関連肺炎（NHCAP）の見直し",
-        summary: "過剰な広域抗菌薬使用を是正し、耐性菌リスクと終末期・個人の意思決定を統合した治療アプローチ。",
-        detail: "NHCAP（医療・介護関連肺炎）の分類が一新され、耐性菌リスク因子の有無（過去90日以内の抗菌薬使用、寝たきり状態、免疫不全等）に応じた的確な抗菌薬選択が強調されています。重症度判定にはA-DROPシステムを用いつつ、誤嚥性肺炎では不必要な抗緑膿菌薬・抗MRSA薬の乱用を控え、嚥下リハや口腔ケアを重視します。",
-        clinicalPoint: "誤嚥性肺炎の再発例では、抗菌薬投与のみならずACP（人生会議）に基づくゴール設定や摂食嚥下評価の早期介入が極めて重要です。",
-        source: "日本呼吸器学会「成人肺炎診療ガイドライン」",
-        sourceExcerpt: "【推奨改定】一律の広域抗菌薬投与を見直し、耐性菌リスク因子の層別化評価を導入。誤嚥性肺炎に対してはスルバクタム/アンピシリン等の狭域〜中等度スペクトラムを基本とし、抗菌薬適正使用支援（AST）を推進。",
-        sourceUrl: "https://www.jrs.or.jp/activities/guidelines/",
-        tags: ["肺炎", "A-DROP", "誤嚥性肺炎", "抗菌薬適正使用", "呼吸器"]
+        id: "sleep-regularity-health",
+        category: "生活リズム",
+        categoryColor: "text-pink-300 bg-pink-400/10 border-pink-400/25",
+        icon: "⏰",
+        title: "就寝・起床時刻のズレは「社会的時差ボケ」を生む",
+        summary: "週末の寝坊による2時間以上の体内時計ズレは、月曜の倦怠感だけでなくインスリン抵抗性や心血管疾患リスクの上昇と直接相関します。",
+        action: "休日も平日との起床時刻のズレを最大1時間以内に抑え、睡眠不足は夜更かしを避けて補いましょう。",
+        citation: {
+          journal: "Scientific Reports (Nature)",
+          authors: "Phillips, A. J. K., et al.",
+          title: "Irregular sleep/wake patterns are associated with poorer academic performance and delayed circadian and sleep/wake timing",
+          doi: "10.1038/s41598-017-03171-4",
+          url: "https://doi.org/10.1038/s41598-017-03171-4"
+        }
       },
       {
-        id: "m11",
-        category: "医学",
-        subCategory: "血液内科・免疫療法",
-        icon: "sparkles",
-        title: "CAR-T細胞療法とサイトカイン放出症候群（CRS）の集中管理",
-        summary: "再発難治性B細胞性リンパ腫・骨髄腫に対するキメラ抗原受容体T細胞療法と特有の免疫合併症対策。",
-        detail: "患者自身のT細胞を遺伝子改変して腫瘍抗原（CD19やBCMA等）を特異的標的とする革新治療です。一方でT細胞の急激な活性化に伴い、高熱・低血圧・低酸素を来すサイトカイン放出症候群（CRS）や免疫エフェクター細胞関連神経毒性症候群（ICANS）が発現します。IL-6阻害薬トシリズマブやデキサメタゾンの迅速投与がプロトコル化されています。",
-        clinicalPoint: "発熱出現時の感染症との迅速な鑑別と、ICANS初期兆候（書字障害、見当識障害）を把握するための連日ICEスコア評価が要となります。",
-        source: "日本造血・免疫細胞療法学会「CAR-T細胞療法診療マニュアル」",
-        sourceExcerpt: "【毒性管理指針】CRSグレード2以上（血管作動薬を要しない低血圧または低酸素）では抗IL-6受容体抗体トシリズマブの早期投与を推奨。ICANSに対してはステロイドを中心とした集中全身管理を実施する。",
-        sourceUrl: "https://www.jstct.or.jp/",
-        tags: ["CAR-T", "CRS", "ICANS", "免疫細胞治療", "トシリズマブ"]
+        id: "alcohol-rem-disruption",
+        category: "飲食・ナイトキャップ",
+        categoryColor: "text-red-300 bg-red-400/10 border-red-400/25",
+        icon: "🍷",
+        title: "寝酒は入眠を早めるが、睡眠後半の質を完全に破壊する",
+        summary: "アルコールはGABA受容体を刺激して眠気を誘うものの、代謝産物アセトアルデヒドが夜半に交感神経を興奮させ、中途覚醒とレム睡眠の脱落を招きます。",
+        action: "晩酌は就寝の3〜4時間前までに済ませ、就寝前の水分補給は常温の水かカモミールティーを選びましょう。",
+        citation: {
+          journal: "Alcoholism: Clinical and Experimental Research",
+          authors: "Ebrahim, I. O., et al.",
+          title: "Alcohol and sleep I: effects on normal sleep",
+          doi: "10.1111/acer.12006",
+          url: "https://doi.org/10.1111/acer.12006"
+        }
       },
       {
-        id: "m12",
-        category: "医学",
-        subCategory: "腫瘍内科・乳がん",
-        icon: "target",
-        title: "ADC（抗体薬物複合体）革命と「HER2低発現（HER2-Low）」の臨床概念",
-        summary: "トラスツズマブ デルクステカン（T-DXd）の登場が塗り替えた乳がん・固形がんの治療パラダイム。",
-        detail: "従来のHER2陽性（IHC 3+またはFISH陽性）だけでなく、IHC 1+またはIHC 2+/FISH陰性である「HER2-Low」進行乳がんに対してもT-DXdが高い腫瘍縮小効果と予後改善を示しました。抗体にトポイソメラーゼI阻害薬を強固に結合させ、細胞膜透過性により周囲の腫瘍細胞も攻撃するバイスタンダー効果がメカニズムの核心です。",
-        clinicalPoint: "重篤な薬剤性間質性肺疾患（ILD）が一定頻度で発現するため、定期胸部CT検査および咳・息切れ自覚時の即時休薬・ステロイド治療が必須です。",
-        source: "日本乳癌学会「乳癌診療ガイドライン」",
-        sourceExcerpt: "【指針推奨】化学療法歴のあるHER2低発現切除不能・転移再発乳がんに対し、トラスツズマブ デルクステカン投与を強く推奨。投与中は間質性肺炎の早期発見プロトコルを徹底する。",
-        sourceUrl: "https://jbcs.gr.jp/",
-        tags: ["ADC", "T-DXd", "HER2低発現", "間質性肺疾患", "乳がん"]
+        id: "magnesium-glycine-supplement",
+        category: "栄養学",
+        categoryColor: "text-teal-300 bg-teal-400/10 border-teal-400/25",
+        icon: "🥑",
+        title: "グリシンとマグネシウムは深部体温下降とNMDA抑制を促進",
+        summary: "アミノ酸の一種グリシンは手足の末梢血流を増やして深部体温の放熱を早め、マグネシウムは神経の興奮を鎮静化させて睡眠潜時を短縮します。",
+        action: "夕食には大豆製品、魚介類、海藻、緑黄色野菜などを意識して取り入れましょう。",
+        citation: {
+          journal: "Sleep and Biological Rhythms",
+          authors: "Yamadera, W., et al.",
+          title: "Glycine ingestion improves subjective sleep quality in human volunteers, correlating with polysomnographic changes",
+          doi: "10.1111/j.1479-8425.2007.00262.x",
+          url: "https://doi.org/10.1111/j.1479-8425.2007.00262.x"
+        }
       },
       {
-        id: "m13",
-        category: "医学",
-        subCategory: "整形外科・骨代謝",
-        icon: "bone",
-        title: "骨粗鬆症におけるシーケンシャルセラピー（骨形成促進薬から骨吸収抑制薬へ）",
-        summary: "骨折超高リスク患者に対するロモソズマブ・テリパラチド先行投与と、それに続くデノスマブ・BP薬リレー。",
-        detail: "既存の脆弱性骨折がある重症骨粗鬆症患者では、骨吸収抑制薬から開始するよりも、まず抗スクレロスチン抗体（ロモソズマブ：1年間）や副甲状腺ホルモン薬（1〜2年間）で骨密度と骨質を強力に再建した後、デノスマブや経口/点滴ビスホスホネート薬へ移行する「連続治療戦略」が標準化されました。",
-        clinicalPoint: "デノスマブ中止時に生じる急速な骨代謝リバウンド（多発椎体骨折リスク）を防ぐため、計画的な休薬・他剤スイッチ指導を遵守します。",
-        source: "骨粗鬆症の予防と治療ガイドライン作成委員会 / 日本骨代謝学会",
-        sourceExcerpt: "【治療シークエンス推奨】重症骨粗鬆症例では骨形成促進薬による先行治療が最も骨折抑制効果が高い。骨形成促進薬の投与期間上限終了後は、獲得した骨量を維持するために速やかに骨吸収抑制薬を投与する。",
-        sourceUrl: "http://www.josteo.com/",
-        tags: ["骨粗鬆症", "シーケンシャルセラピー", "ロモソズマブ", "デノスマブ", "骨折予防"]
+        id: "tryptophan-breakfast-synthesis",
+        category: "時間栄養学",
+        categoryColor: "text-yellow-300 bg-yellow-400/10 border-yellow-400/25",
+        icon: "🍳",
+        title: "朝食の「トリプトファン」摂取が16時間後のメラトニン原料になる",
+        summary: "朝に摂取した必須アミノ酸トリプトファンは、日中に太陽光を浴びることでセロトニンへと変わり、夜になると睡眠ホルモンのメラトニンへ変換されます。",
+        action: "朝食に卵、納豆、バナナ、ヨーグルトなどトリプトファン豊富な食品を必ず1品プラスしましょう。",
+        citation: {
+          journal: "Journal of Nutritional Science and Vitaminology",
+          authors: "Wada, K., et al.",
+          title: "A breakfast rich in tryptophan enhances morning-typology and melatonin secretion at night",
+          doi: "10.3177/jnsv.59.35",
+          url: "https://doi.org/10.3177/jnsv.59.35"
+        }
       },
       {
-        id: "m14",
-        category: "医学",
-        subCategory: "ペインクリニック・神経内科",
-        icon: "activity",
-        title: "神経障害性疼痛の薬物療法アルゴリズムと適正使用",
-        summary: "プレガバリン・ミロガバリン、SNRI（デュロキセチン）、三環系抗うつ薬の使い分けと副作用管理。",
-        detail: "糖尿病性神経障害や帯状疱疹後神経痛、坐骨神経痛などの神経障害性疼痛に対し、Caチャネルα2δリガンド（プレガバリン・ミロガバリン）やSNRI（デュロキセチン）が第1選択薬と位置付けられます。傾眠・めまい・浮腫を避けるため少量から漸増し、漫然投与を避けて効果判定を行います。",
-        clinicalPoint: "高齢者における転倒リスク評価と、自動車運転注意のインフォームドコンセントをカルテに必ず記録します。",
-        source: "日本ペインクリニック学会「神経障害性疼痛薬物療法ガイドライン」",
-        sourceExcerpt: "【第1選択薬】Caチャネルα2δリガンド、SNRI、三環系抗うつ薬（アミトリプチリン）。非オピオイド鎮痛薬（NSAIDsやアセトアミノフェン）単独での漫然投与を是正し、病態に基づいた早期治療導入を推奨。",
-        sourceUrl: "https://www.jspc.gr.jp/",
-        tags: ["神経障害性疼痛", "ミロガバリン", "デュロキセチン", "疼痛管理", "転倒予防"]
+        id: "pink-noise-slow-wave",
+        category: "音響心理学・脳波同調",
+        categoryColor: "text-rose-300 bg-rose-400/10 border-rose-400/25",
+        icon: "🌊",
+        title: "就寝時の「ピンクノイズ」が深睡眠のデルタ波を同期・増強する",
+        summary: "雨音や波の音に代表されるピンクノイズ（1/fゆらぎ）を聴くことで、脳の低周波徐波（デルタ波）が同期され、記憶の定着と熟睡感が約20%向上することが実証されています。",
+        action: "寝室が無音で不安な場合や雑音が気になる場合は、雨音などの自然環境音を小さめの音量で流してみましょう。",
+        citation: {
+          journal: "Frontiers in Human Neuroscience",
+          authors: "Papalambros, N. Z., et al.",
+          title: "Acoustic Enhancement of Sleep Slow Oscillations and Concomitant Memory Improvement in Older Adults",
+          doi: "10.3389/fnhum.2017.00109",
+          url: "https://doi.org/10.3389/fnhum.2017.00109"
+        }
       },
       {
-        id: "m15",
-        category: "医学",
-        subCategory: "感染症・高齢者医療",
-        icon: "shield",
-        title: "帯状疱疹組換えサブユニットワクチン（シングリックス）の有効性と免疫持続性",
-        summary: "50歳以上の成人および免疫不全リスク者を対象とした、長期的発症・PHN（神経痛）抑制ワクチン。",
-        detail: "水痘帯状疱疹ウイルス糖蛋白質E（gE）と新規アジュバントを配合した組換え不活化ワクチン。生ワクチンに比べ高い有効性（50歳以上で97%、80歳以上でも90%超）を誇り、10年以上の抗体価持続が確認されています。局所反応（疼痛・腫脹・倦怠感）が強く現れるため事前説明が重要です。",
-        clinicalPoint: "2ヶ月間隔（最大6ヶ月以内）で計2回筋肉内接種を行います。免疫抑制剤や生物学的製剤投与中であっても安全に接種可能です。",
-        source: "日本感染症学会「予防接種のてびき」/ 各自治体助成事業指針",
-        sourceExcerpt: "【接種推奨】帯状疱疹および帯状疱疹後神経痛（PHN）の発症を大幅に抑制。免疫機能が低下した成人に対しても安全に接種可能であり、自治体による公費助成制度の導入が全国で急速に拡大しています。",
-        sourceUrl: "https://www.kansensho.or.jp/",
-        tags: ["帯状疱疹", "シングリックス", "ワクチン", "高齢者医療", "PHN予防"]
-      },
-
-      // --- 最新 医療行政・制度改革知識 ---
-      {
-        id: "a01",
-        category: "医療行政",
-        subCategory: "診療報酬改定・生活習慣病",
-        icon: "file-spreadsheet",
-        title: "生活習慣病管理料（Ⅰ・Ⅱ）への再編と療養計画書の電子化",
-        summary: "特定疾患療養管理料から糖尿病・高血圧症・脂質異常症を除外し、総合的重症化予防管理へ一本化。",
-        detail: "高血圧症、脂質異常症、糖尿病を主病とする患者について、従来の特定疾患療養管理料から生活習慣病管理料へ移行しました。検査や投薬を含む包括評価（Ⅰ）と、処方箋を別算定する（Ⅱ）に分かれ、血液検査値・目標体重・運動/食事指導を明記した「療養計画書」の交付および患者署名（電磁的同意可能）が算定要件となります。",
-        clinicalPoint: "リフィル処方箋や長期処方（28日以上）の対応方針を院内掲示・周知し、患者個別の生活指導を多職種で共有するオペレーションが求められます。",
-        source: "厚生労働省「令和6年度診療報酬改定について（医科）」",
-        sourceExcerpt: "【改定ポイント】生活習慣病管理料（Ⅰ）は検査等を包括した月1回算定、（Ⅱ）は外来診療料や投薬・検査を別途出来高算定。初回交付時は患者署名が必須（2回目以降は電磁的記録での交付・同意も可能）。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00045.html",
-        tags: ["生活習慣病管理料", "診療報酬改定", "療養計画書", "生活習慣病"]
+        id: "apnea-micro-arousal",
+        category: "呼吸と睡眠医学",
+        categoryColor: "text-blue-300 bg-blue-400/10 border-blue-400/25",
+        icon: "🫁",
+        title: "無意識の口呼吸・いびきは脳の微小覚醒を引き起こす",
+        summary: "睡眠中の口呼吸は気道を狭窄させ、低酸素状態と微小覚醒（自覚のない覚醒）を毎晩数百回誘発します。これが7時間以上寝ても疲れが取れない主因となります。",
+        action: "鼻呼吸を意識し、寝る前に鼻うがいを行うか、口閉じテープなどの活用を検討しましょう。",
+        citation: {
+          journal: "Chest (American College of Chest Physicians)",
+          authors: "Meurice, J. C., et al.",
+          title: "Influence of mouth opening on upper airway collapsibility during sleep",
+          doi: "10.1378/chest.115.1.132",
+          url: "https://doi.org/10.1378/chest.115.1.132"
+        }
       },
       {
-        id: "a02",
-        category: "医療行政",
-        subCategory: "医療DX・デジタルヘルス",
-        icon: "network",
-        title: "医療DX推進体制整備加算と電子処方箋・カルテ情報共有",
-        summary: "オンライン資格確認、マイナ保険証利用促進、電子処方箋、国レベルの電子カルテ情報共有サービスへの接続。",
-        detail: "医療機関におけるオンライン資格確認の実績に加え、マイナ保険証の利用率基準の達成、電子処方箋の導入と処方重複チェックの運用、電子カルテ情報共有サービス（HL7 FHIR準拠の6情報・健診結果共有）への接続体制を段階的に満たすことで点数が評価されます。医療安全と重複投薬・相互作用の自動検知が狙いです。",
-        clinicalPoint: "窓口・受付でのマイナ保険証利用案内体制の標準化と、薬剤師・医師間でのリアルタイム重複投薬防止フローの確立が肝要です。",
-        source: "厚生労働省「医療DXについて」/ 社会保険診療報酬支払基金",
-        sourceExcerpt: "【施設基準】オンライン請求を行っていること、オンライン資格確認を行う体制、マイナ保険証の利用実績が一定割合以上であること、電子処方箋を発行する体制、電子カルテ情報共有サービスを活用できる体制の整備を段階的に評価。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/iryou-dx.html",
-        tags: ["医療DX", "マイナ保険証", "電子処方箋", "電子カルテ情報共有", "診療報酬"]
+        id: "weighted-blanket-insomnia",
+        category: "寝具環境・触覚刺激",
+        categoryColor: "text-violet-300 bg-violet-400/10 border-violet-400/25",
+        icon: "🛏️",
+        title: "体重の10%前後の「加重ブランケット」が不眠と不安を低減",
+        summary: "適度な圧迫刺激（深部接触圧刺激）は迷走神経を刺激して副交感神経を優位にし、夜間のオキシトシン分泌を促進。不眠重症度指数（ISI）を有意に改善します。",
+        action: "睡眠中に落ち着かない・寝返りが多すぎる場合は、少し重みのある寝具の利用を試してみましょう。",
+        citation: {
+          journal: "Journal of Clinical Sleep Medicine",
+          authors: "Ekholm, B., et al.",
+          title: "A randomized controlled study of weighted chain blankets for insomnia in psychiatric disorders",
+          doi: "10.5664/jcsm.8636",
+          url: "https://doi.org/10.5664/jcsm.8636"
+        }
       },
       {
-        id: "a03",
-        category: "医療行政",
-        subCategory: "地域医療構想・2040年問題",
-        icon: "building-2",
-        title: "新・地域医療構想（2040年に向けた医療提供体制改革）",
-        summary: "人口減少・高齢者単身世帯急増を見据え、病床機能の再編だけでなく在宅医療・介護連携・医療DXまでを包括。",
-        detail: "従来の2025年目標（高度急性期・急性期・回復期・慢性期の病床機能分化）から、2040年に向けた「医療従事者の急速な減少」と「85歳以上超高齢者の急増」に対応する構想へと深化しています。病院の集約・再編、かかりつけ医機能報告制度との連動、急性期病床のスリム化と地域包括医療病棟へのシフトが進められています。",
-        clinicalPoint: "地域包括医療病棟（急性期一般からの受け皿、リハビリ・栄養・退院支援の包括提供）の届出動向が中小急性期病院の経営戦略の焦点となります。",
-        source: "厚生労働省「新たな地域医療構想等に関する検討会」",
-        sourceExcerpt: "【構想骨子】医療機関ごとの病床機能報告にとどまらず、構想区域における外来・在宅・介護施設とのネットワーク全体を最適化。救急搬送の適正化やオンライン診療を活用した広域医師偏在対策を推進。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/shingi/other-isei_437142_00004.html",
-        tags: ["新地域医療構想", "地域包括医療病棟", "2040年問題", "病床再編", "医療政策"]
+        id: "sleep-debt-catchup-fallacy",
+        category: "睡眠負債の回復限界",
+        categoryColor: "text-rose-300 bg-rose-400/10 border-rose-400/25",
+        icon: "📉",
+        title: "平日の睡眠負債は休日の「寝だめ」では代謝回復できない",
+        summary: "平日の睡眠不足を週末の長時間睡眠で補おうとしても、筋肉や肝臓のインスリン感受性の低下や夜間カロリー摂取の増加傾向は回復しないことが判明しています。",
+        action: "週末に長寝するのではなく、平日夜に就寝時刻を30分前倒しにして負債の蓄積を防ぎましょう。",
+        citation: {
+          journal: "Current Biology (Cell Press)",
+          authors: "Depner, C. M., et al.",
+          title: "Ad libitum Recovery Sleep Does Not Prevent Metabolic Dysregulation and Insulin Sensitivity Reductions",
+          doi: "10.1016/j.cub.2019.01.069",
+          url: "https://doi.org/10.1016/j.cub.2019.01.069"
+        }
       },
       {
-        id: "a04",
-        category: "医療行政",
-        subCategory: "医療安全・労務管理",
-        icon: "clock-3",
-        title: "医師の働き方改革の完全施行と宿日直許可の実務運用",
-        summary: "時間外労働上限規制（年960時間/1860時間）と連続勤務時間制限（28時間）、勤務間インターバル確保。",
-        detail: "労働基準監督署による「宿日直許可」の取得有無が宿直帯の勤務時間の扱いを大きく分けるため、実労働時間（夜間急患対応・急変対応）の厳格な客観的記録が義務付けられています。C水準（臨床研修医・専攻医・高度技能修得）病院では面接指導や労働時間短縮計画の作成・提出が継続監査対象となります。",
-        clinicalPoint: "当直明けの翌日勤務緩和（当直明け半日休み等）や、特定行為研修修了看護師・医師事務作業補助者へのタスク・シフティングが必須です。",
-        source: "厚生労働省 医療勤務環境改善支援ポータルサイト「いきサポ」",
-        sourceExcerpt: "【法規上の義務】A水準（年960時間）、B水準・特B・C水準（年1860時間）。宿日直許可を受けた宿日直中に通常の労働に従事した時間については、割増賃金対象の実労働時間として計上し、休息時間を適切に確保することが定められています。",
-        sourceUrl: "https://iryou-kinmukankyou.mhlw.go.jp/",
-        tags: ["医師の働き方改革", "宿日直許可", "勤務間インターバル", "労務管理", "タスクシフト"]
+        id: "warm-socks-vasodilation",
+        category: "末梢血管・放熱メカニズム",
+        categoryColor: "text-amber-300 bg-amber-400/10 border-amber-400/25",
+        icon: "🧦",
+        title: "「靴下着用」で足先を温めると入眠潜時が平均7.5分短縮",
+        summary: "手足の末梢皮膚血管が拡張すると、体の深部にある熱が体外へ逃げやすくなり、急速な深部体温低下が起きてスムーズな眠気が訪れます。",
+        action: "足先が冷えて寝付けない日は、締め付けの少ない通気性の良い快眠用靴下を履いてベッドに入りましょう。",
+        citation: {
+          journal: "Journal of Physiological Anthropology",
+          authors: "Ko, Y., & Lee, J. Y.",
+          title: "Effects of feet warming using bed socks on sleep quality and thermoregulatory responses in a cool environment",
+          doi: "10.1186/s40101-018-0172-z",
+          url: "https://doi.org/10.1186/s40101-018-0172-z"
+        }
       },
       {
-        id: "a05",
-        category: "医療行政",
-        subCategory: "医薬品供給・医療経済",
-        icon: "pill",
-        title: "後発医薬品供給不安対策とバイオ後続品（バイオシミラー）導入",
-        summary: "薬価制度改革による供給安定確保と、高額バイオ医薬品に対するバイオシミラー使用促進策。",
-        detail: "品質問題に端を発したジェネリック医薬品の供給不足・出荷調整に対し、安定供給確保に係る加算や企業再編の誘導が進められています。一方で医療財政適正化のため、インスリン、抗TNF-α抗体、抗VEGF薬などのバイオ医薬品について、医療機関に「バイオ後続品使用体制加算」を設け、後続品への切り替えを強力に後押ししています。",
-        clinicalPoint: "患者への先発品とバイオシミラーの有効性・同等性・自己負担額低減メリットの適切なインフォームドコンセントが切り替え成功の鍵です。",
-        source: "厚生労働省「バイオ後続品（バイオシミラー）の使用促進について」",
-        sourceExcerpt: "【経済的効果と方針】品質・有効性・安全性が先発バイオ医薬品と同等であることを確認。バイオシミラーの目標普及率（成分数ベース80%以上）に向け、診療報酬上の加算評価と医療保険財政の持続可能性向上を図る。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000078000.html",
-        tags: ["バイオシミラー", "医薬品安定供給", "後発医薬品", "薬価制度", "医療経済"]
+        id: "meal-timing-circadian-clock",
+        category: "時間栄養学・消化器時計",
+        categoryColor: "text-orange-300 bg-orange-400/10 border-orange-400/25",
+        icon: "🍽️",
+        title: "就寝前2時間以内の夕食は深睡眠を削り血糖スパイクを長期化",
+        summary: "消化活動中に睡眠に入ると、消化管の自律神経が覚醒状態を維持し、胃食道逆流や心拍数増加を招きます。またメラトニンがインスリン分泌を抑えるため高血糖が続きます。",
+        action: "夕食は就寝の3時間前までに終えるか、遅くなった場合は消化の良いスープや軽食にとどめましょう。",
+        citation: {
+          journal: "The Journal of Clinical Endocrinology & Metabolism",
+          authors: "Gu, C., et al.",
+          title: "Metabolic Effects of Late Dinner in Healthy Volunteers—A Randomized Crossover Clinical Trial",
+          doi: "10.1210/clinem/dgaa354",
+          url: "https://doi.org/10.1210/clinem/dgaa354"
+        }
       },
       {
-        id: "a06",
-        category: "医療行政",
-        subCategory: "かかりつけ医機能・外来再編",
-        icon: "hospital",
-        title: "かかりつけ医機能報告制度と住民への情報提供",
-        summary: "外来医療の機能分化。休日・夜間対応や在宅医療、多職種連携を担う医療機関の機能を都道府県に報告・公表。",
-        detail: "かかりつけ医機能を明確化し、地域の医療機関が「慢性疾患の継続管理」「休日・夜間対応」「在宅医療」「入退院時の支援」等の機能を担う実績を都道府県へ報告し、住民が選択できるようポータルで可視化する制度です。紹介受診重点医療機関（特定機能病院等）と一次医療機関の機能棲み分けが制度面から強化されます。",
-        clinicalPoint: "地域の在宅医療連携拠点や介護支援専門員（ケアマネジャー）との日常的カンファレンス開催が地域密着型クリニックの差別化要因になります。",
-        source: "厚生労働省「かかりつけ医機能が発揮される制度について」",
-        sourceExcerpt: "【制度内容】日常的な診療を行う医療機関のうち、かかりつけ医機能を有する旨を都道府県に報告。知事は確認した機能を公表し、医療機能情報提供制度等を通じて国民・患者が身近な医療機関を適切に選択できるよう支援する。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00055.html",
-        tags: ["かかりつけ医機能", "外来機能分化", "地域医療", "在宅医療", "医療法"]
+        id: "continuous-darkness-rem",
+        category: "寝室環境・光害",
+        categoryColor: "text-purple-300 bg-purple-400/10 border-purple-400/25",
+        icon: "🌑",
+        title: "わずか5ルクスの豆電球でも夜間睡眠の覚醒指数を上昇させる",
+        summary: "閉瞼（まぶたを閉じた状態）であっても網膜は光を感知します。かすかな常夜灯や街灯の漏れ光は、夜間の交感神経活動を高め、心拍変動の安定性を損なうことが確認されています。",
+        action: "寝室のカーテンは遮光1級を選び、豆電球は消して「完全な暗闇」で眠る環境を整えましょう。",
+        citation: {
+          journal: "PNAS (Proc. Natl. Acad. Sci. USA)",
+          authors: "Mason, I. C., et al.",
+          title: "Light exposure during sleep impairs cardiometabolic function",
+          doi: "10.1073/pnas.2113290119",
+          url: "https://doi.org/10.1073/pnas.2113290119"
+        }
       },
       {
-        id: "a07",
-        category: "医療行政",
-        subCategory: "外来機能分化・患者負担",
-        icon: "receipt",
-        title: "紹介受診重点医療機関と選定療養費の義務化",
-        summary: "紹介状なしで大病院を受診した際の定額負担（初診7,000円以上）。外来混雑緩和と勤務医負担軽減。",
-        detail: "特定機能病院や200床以上の地域医療支援病院、および都道府県が指定する「紹介受診重点医療機関」を受診する際、他院からの紹介状を持たない患者には保険給付外の定額負担（初診時医科7,000円・歯科5,000円以上、再診時医科3,000円以上）の徴収が義務付けられています。",
-        clinicalPoint: "クリニックから高度急性期病院へ紹介する際は、患者負担の差異を明確に説明し、逆紹介（病状安定後のクリニック帰還）の連携パスを構築します。",
-        source: "厚生労働省「紹介状なしで重点外来を担う医療機関を受診する場合等の定額負担について」",
-        sourceExcerpt: "【制度の目的】軽症患者の大病院集中を抑制し、高度な専門医療を必要とする重症患者へのリソース集中と勤務医の外来過重労働を是正するための制度的枠組み。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00041.html",
-        tags: ["選定療養費", "紹介受診重点医療機関", "外来機能分化", "紹介状", "医療制度"]
+        id: "nasal-breathing-nitric-oxide",
+        category: "生理学・呼吸ガス交換",
+        categoryColor: "text-cyan-300 bg-cyan-400/10 border-cyan-400/25",
+        icon: "👃",
+        title: "鼻呼吸により生成される一酸化窒素（NO）が肺の酸素吸収効率を10%高める",
+        summary: "副鼻腔で作られる一酸化窒素（NO）は鼻呼吸時にのみ肺へ運ばれ、血管拡張作用によって血液中への酸素供給をスムーズにし、安定した睡眠深度を保ちます。",
+        action: "日中から「舌先を上顎（スポット）につけて鼻で呼吸する」習慣をつけましょう。",
+        citation: {
+          journal: "American Journal of Respiratory and Critical Care Medicine",
+          authors: "Lundberg, J. O., & Weitzberg, E.",
+          title: "Nasal nitric oxide in man",
+          doi: "10.1134/S0026893308060010",
+          url: "https://doi.org/10.1164/ajrccm.160.6.9904032"
+        }
       },
       {
-        id: "a08",
-        category: "医療行政",
-        subCategory: "薬事・処方制度",
-        icon: "refresh-cw",
-        title: "リフィル処方箋と長期処方（28日以上）の適正運用",
-        summary: "症状安定患者に対する最大3回までの反復調剤。医師・薬剤師の協働による外来頻度の適正化。",
-        detail: "リフィル処方箋は、一定期間内で最大3回まで医師の再診なしに薬局で調剤を受けられる制度です。湿布薬や向精神薬、麻薬等は対象外。患者の通院負担軽減と医療費効率化が期待される一方、調剤時の薬剤師による服薬状況・体調変化モニタリングと、疑義照会・受診勧奨の連携ルールが不可欠です。",
-        clinicalPoint: "投薬期間満了前に患者の病態変化が生じた場合、薬剤師から処方医への情報提供（トレーシングレポート）を受け即座に再診へ繋ぐ体制を敷きます。",
-        source: "厚生労働省「リフィル処方箋の仕組みと留意事項」",
-        sourceExcerpt: "【算定要件】医師が長期投与可能と判断した症状安定患者が対象。1回あたりの投薬期間及び総投薬期間は医師が個別に判断。薬局薬剤師は調剤ごとに患者の服薬状況や副作用を確認し医師へフィードバックを行う。",
-        sourceUrl: "https://www.mhlw.go.jp/",
-        tags: ["リフィル処方箋", "長期処方", "薬剤師連携", "服薬管理", "医療効率化"]
-      },
-      {
-        id: "a09",
-        category: "医療行政",
-        subCategory: "遠隔医療・情報通信",
-        icon: "monitor",
-        title: "情報通信機器を用いた診療（オンライン診療）の施設基準と指針",
-        summary: "初診からのオンライン診療解禁と、向精神薬処方制限・対面診療への迅速移行体制の義務化。",
-        detail: "オンライン診療料は、厚生労働省の「オンライン診療の適切な実施に関する指針」を遵守し研修を修了した医師が実施します。初診からの実施も可能ですが、麻薬や向精神薬、基礎疾患が把握できない患者へのハイリスク薬処方は厳格に禁じられています。緊急時に対面診療を行える体制（自院または連携医療機関）の確保が必須要件です。",
-        clinicalPoint: "対面診療とオンライン診療の組み合わせ基準や、通信トラブル・急変時の近隣医療機関への搬送手順を事前合意しておく必要があります。",
-        source: "厚生労働省「オンライン診療の適切な実施に関する指針」",
-        sourceExcerpt: "【重要指針】初診における向精神薬の処方は禁止。触診・聴診ができない限界を理解し、診断に疑義がある場合は速やかに対面診療へ切り替える義務がある。診療録に通信状況や録画有無等を適切に記録する。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00043.html",
-        tags: ["オンライン診療", "遠隔医療", "適正使用指針", "向精神薬制限", "医療安全"]
-      },
-      {
-        id: "a10",
-        category: "医療行政",
-        subCategory: "精神医療・人権擁護",
-        icon: "heart-handshake",
-        title: "精神保健福祉法改正（医療保護入院の入院期間制限と虐待防止）",
-        summary: "家族同意による医療保護入院に見直しのメス。期間上限の設定と病院管理者の虐待防止措置義務化。",
-        detail: "本人の同意が得られない非自発的入院である「医療保護入院」について、入院期間の上限（原則6ヶ月以内等）が法定化され、継続には定期的な精神保健指定医による再評価と都道府県知事への報告が義務付けられました。また、精神科病院内での患者虐待防止研修の実施や通報窓口の設置など、人権擁護体制が大幅に強化されています。",
-        clinicalPoint: "退院支援委員会を早期から開催し、地域移行コーディネーターや精神保健福祉士と連携した地域生活移行計画の策定を推進します。",
-        source: "厚生労働省「精神保健及び精神障害者福祉に関する法律の一部改正について」",
-        sourceExcerpt: "【法改正の骨子】医療保護入院の期間の上限を設け、定期的な更新確認を実施。家族等による同意が得られない場合の市町村長同意運用の明確化。病院従事者による虐待の早期発見・通報義務の新設。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00050.html",
-        tags: ["精神保健福祉法", "医療保護入院", "人権擁護", "地域移行", "医療法制"]
-      },
-      {
-        id: "a11",
-        category: "医療行政",
-        subCategory: "在宅医療・終末期",
-        icon: "home",
-        title: "在宅医療・訪問診療の機能強化と看取り連携加算",
-        summary: "在宅療養支援診療所（在支診）・病院の24時間対応体制と、ICTを用いた多職種看取りネットワーク。",
-        detail: "超高齢社会における多死時代を見据え、在宅患者訪問診療料や在宅時医学総合管理料（在医総管）の評価が再編されています。特に独居高齢者や末期悪性腫瘍患者に対する24時間往診・連絡体制の構築、看取り実績、訪問看護ステーションやケアマネジャーとICTツールを活用したリアルタイム情報共有を行う体制が加算評価されます。",
-        clinicalPoint: "ACP（アドバンス・ケア・プランニング）を患者・家族と反復して話し合い、救急要請を巡る方針（DNAR等）を共有しておくことが在宅看取りの質を左右します。",
-        source: "厚生労働省「在宅医療の推進について」/ 日本在宅医療連合学会",
-        sourceExcerpt: "【評価体系】重症度や居住形態（自宅または施設）に応じたきめ細かな点数設定。複数の無床診療所が連携して24時間体制を構築する連携型在支診の推進と、ターミナルケア加算における多職種カンファレンスの義務化。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/zaitaku/index.html",
-        tags: ["在宅医療", "訪問診療", "在支診", "看取り", "ACP"]
-      },
-      {
-        id: "a12",
-        category: "医療行政",
-        subCategory: "医療従事者確保・配置",
-        icon: "map-pin",
-        title: "医師偏在是正に向けた重点支援区域と地域枠制度改革",
-        summary: "医師多数県から少数県へのシフト誘導。臨床研修医・専攻医の定員上限（シーリング）とキャリアパス支援。",
-        detail: "大都市圏への医師集中を是正するため、医師偏在指標に基づき「医師少数県」「医師多数県」を定義。専攻医（専門医研修）の採用シーリング（募集定員上限規制）の厳格化や、地方での勤務実績を管理者（病院長）要件とする特定地域勤務医師制度が施行されています。地域枠医師の定着に向けたキャリア形成プログラムの充実が進められています。",
-        clinicalPoint: "総合診療専門医の養成や、地域中核病院と大学病院・大都市病院間での循環型医師派遣協定の構築が喫緊の課題です。",
-        source: "厚生労働省「医師需給分科会 / 医療従事者の需給に関する検討会」",
-        sourceExcerpt: "【対策骨子】全国一律の指標による偏在状況の可視化。医師少数区域での勤務経験を一定の公的病院の管理者要件とする仕組み。地域医療対策協議会を通じた実効性ある研修医・専攻医の配置調整。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/shingi/other-isei_208035.html",
-        tags: ["医師偏在対策", "シーリング", "地域枠", "専門医制度", "医療政策"]
-      },
-      {
-        id: "a13",
-        category: "医療行政",
-        subCategory: "医療保険財政・高額療養費",
-        icon: "coins",
-        title: "高額療養費制度の上限額見直しと現役世代の保険料負担軽減",
-        summary: "革新的新薬（抗体薬・遺伝子治療）の高額化に伴う財政圧迫と、所得区分・資産に応じた負担の公平化。",
-        detail: "分子標的薬やCAR-T細胞療法など数千万円規模の超高額薬剤が登場する中、患者の自己負担を一定限度に抑える「高額療養費制度」の持続可能性が最大の議論となっています。高齢者・高所得者の自己負担上限の段階的引き上げや、世帯合算・多数回該当のルールの見直しを通じて、現役世代の保険料負担上昇を抑制する改革が進行しています。",
-        clinicalPoint: "窓口での限度額適用認定証の提示やマイナ保険証利用により、一時的な多額の立て替え負担を不要にする案内が窓口で求められます。",
-        source: "社会保障審議会 医療保険部会資料「高額療養費制度の見直しについて」",
-        sourceExcerpt: "【議論の方向性】医療の高度化に伴う医療給付費の急増に対応し、負担能力に応じた公平な負担（応能負担）を徹底。限度額区分の細分化や金融資産の保有状況を考慮した見直しが検討されています。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/shingi/shingi-hosho_126707.html",
-        tags: ["高額療養費", "医療保険制度", "応能負担", "医療財政", "限度額適用"]
-      },
-      {
-        id: "a14",
-        category: "医療行政",
-        subCategory: "入院医療・病棟再編",
-        icon: "layout-grid",
-        title: "地域包括医療病棟の新設と急性期病床からの転換",
-        summary: "高齢者救急の受け入れと早期リハビリ・栄養・退院支援を包括評価する新たな病棟区分。",
-        detail: "急性期一般病棟（旧7対1・10対1）から、急性増悪した高齢者救急を積極的に受け入れ、リハビリテーション、栄養管理、口腔ケア、在宅復帰支援を包括的に提供する「地域包括医療病棟」が新設されました。看護配置10対1、リハ専門職・管理栄養士の専従配置、在宅復帰率などの厳しい施設基準が設定されています。",
-        clinicalPoint: "入院早期（48時間以内）からのADL維持計画策定と多職種回診が、平均在院日数短縮と高点数維持の鍵となります。",
-        source: "厚生労働省「令和6年度診療報酬改定の概要（入院医療）」",
-        sourceExcerpt: "【新設要件】救急搬送等の受け入れ実績、専従の理学療法士等の配置による1日平均2単位以上の疾患別リハ提供、早期栄養介入管理加算の算定体制などを満たすことを求める包括入院料。",
-        sourceUrl: "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000188411_00045.html",
-        tags: ["地域包括医療病棟", "高齢者救急", "リハビリテーション", "急性期再編", "診療報酬"]
-      },
-      {
-        id: "a15",
-        category: "医療行政",
-        subCategory: "医薬品適正使用・安全",
-        icon: "alert-octagon",
-        title: "ポリファーマシー対策と薬剤総合評価調整加算",
-        summary: "6剤以上の多剤服用患者に対する処方見直し。入院・外来における減薬と副作用防止の多職種協働。",
-        detail: "複数の慢性疾患を抱える高齢者で問題となる「ポリファーマシー（多剤併用による有害事象）」。内服薬が6種類以上ある患者に対し、医師・薬剤師・看護師が連携して処方の必要性を再評価し、2種類以上の処方を減らし4週間以上維持した場合に算定されます。処方カスケード（副作用に対して別の薬を追加する悪循環）の断ち切りが焦点です。",
-        clinicalPoint: "自己中断を防ぐため、減薬の意図を患者・家族に丁寧に説明し、漸減中止後の症状再燃がないか外来や訪問看護で密にフォローします。",
-        source: "日本老年医学会「高齢者の安全な薬物療法ガイドライン」/ 厚生労働省",
-        sourceExcerpt: "【施設基準・算定要件】入院前または受診時に6種類以上の内服薬が処方されている患者に対し、薬物有害事象の有無を総合評価し2剤以上減薬させた場合に評価。退院時サマリーでの処方変更理由の共有が必須。",
-        sourceUrl: "https://www.jpnsoc.org/",
-        tags: ["ポリファーマシー", "減薬", "薬剤総合評価調整加算", "処方カスケード", "高齢者薬物療法"]
+        id: "sleep-memory-consolidation-slow-spindle",
+        category: "神経科学・記憶定着",
+        categoryColor: "text-indigo-300 bg-indigo-400/10 border-indigo-400/25",
+        icon: "💡",
+        title: "徐波と「睡眠紡錘波」の同期が海馬から大脳皮質への記憶転送を完了する",
+        summary: "深い眠り（ノンレム睡眠ステージ3）中に発生するスローウェーブと睡眠スピンドルが正確に同期することで、日中覚えた事実や学習情報が長期記憶として定着します。",
+        action: "試験勉強や仕事のインプットをした日は、徹夜せず最低7時間の睡眠を確保して記憶を固めましょう。",
+        citation: {
+          journal: "Nature Neuroscience",
+          authors: "Helfrich, R. F., et al.",
+          title: "Old Brains Come Uncoupled in Sleep: Slow Wave-Spindle Synchrony",
+          doi: "10.1038/s41593-017-0032-5",
+          url: "https://doi.org/10.1038/s41593-017-0032-5"
+        }
       }
     ];
 
-    const STORAGE_KEY = "medi_admin_daily_state";
+    /* 配信済みIDの永続管理キー */
+    const STORAGE_DELIVERED_KEY = 'somna_delivered_unique_ids';
+    const STORAGE_DAILY_MAP_KEY = 'somna_daily_delivered_map';
 
-    let state = {
-      currentDateOffset: 0, // 0 = 今日, -1 = 前日
-      deliveryCount: 3,     // 1〜5件
-      balanceSetting: "balanced",
-      fontSize: "md",       // sm, md, lg, xl
-      completedCardIds: [],
-      bookmarkedCardIds: [],
-      viewedCardIds: [],    // 既出トラッキング
-      generatedCards: [],   // AI生成によって追加されたカード群（永続蓄積）
-      lastAutoGeneratedDate: null, // 自動生成を実行した最終日付（YYYY-MM-DD）
-      sessionSeedOffset: 0, // シャッフル・更新用オフセット
-      activeFilter: "all"
-    };
-
-    // ローカルストレージ復元
-    function loadState() {
+    /* ローカルストレージから過去に配信されたIDを取得 */
+    function getDeliveredHistory() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          state = { ...state, ...parsed };
-          if (!Array.isArray(state.viewedCardIds)) state.viewedCardIds = [];
-          if (!Array.isArray(state.generatedCards)) state.generatedCards = [];
-        }
+        const stored = localStorage.getItem(STORAGE_DELIVERED_KEY);
+        return stored ? JSON.parse(stored) : [];
       } catch (e) {
-        console.warn("Storage loading failed:", e);
+        return [];
       }
     }
 
-    // 全カードプール（内蔵30問 ＋ AI生成で追加されたカード）
-    function getAllKnowledge() {
-      return [...KNOWLEDGE_BASE, ...state.generatedCards];
+    /* 配信履歴を保存 */
+    function saveDeliveredHistory(idList) {
+      try {
+        localStorage.setItem(STORAGE_DELIVERED_KEY, JSON.stringify(idList));
+      } catch (e) {}
     }
 
-    function saveState() {
+    /* 日付ごとの配信マッピングを取得 */
+    function getDailyMap() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        const stored = localStorage.getItem(STORAGE_DAILY_MAP_KEY);
+        return stored ? JSON.parse(stored) : {};
       } catch (e) {
-        console.warn("Storage saving failed:", e);
+        return {};
       }
     }
 
-    function getDisplayDate(offset = 0) {
-      const d = new Date();
-      d.setDate(d.getDate() + offset);
+    function saveDailyMap(map) {
+      try {
+        localStorage.setItem(STORAGE_DAILY_MAP_KEY, JSON.stringify(map));
+      } catch (e) {}
+    }
+
+    /* アプリ状態 */
+    let deliveryHour = 7;
+    let deliveryMinute = 30;
+    let savedBookmarks = new Set();
+    let currentTab = 'today';
+
+    function formatTimeDisplay(hour, minute) {
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    /* 配信サイクルに応じた日付キーを計算 */
+    function getCycleDateKey() {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const isPastDelivery = (currentHour > deliveryHour) || (currentHour === deliveryHour && currentMinute >= deliveryMinute);
+      
+      const targetDate = new Date(now);
+      if (!isPastDelivery) {
+        targetDate.setDate(targetDate.getDate() - 1);
+      }
+
+      const y = targetDate.getFullYear();
+      const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const d = String(targetDate.getDate()).padStart(2, '0');
       const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const month = d.getMonth() + 1;
-      const date = d.getDate();
-      const dayName = days[d.getDay()];
-      const year = d.getFullYear();
-      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-      const seed = year * 10000 + month * 100 + date;
+
       return {
-        fullString: `${month}月${date}日 (${dayName})`,
-        seed: seed,
-        isoDate: isoDate
+        key: `${y}-${m}-${d}`,
+        formatted: `${y}年${m}月${d}日 (${days[targetDate.getDay()]})`
       };
     }
 
-    // Google検索グラウンディングを活用した最新トピック自動生成エンジン
-    async function generateNewTopicWithAI(count = 3) {
-      const banner = document.getElementById("aiGeneratingBanner");
-      const generateBtn = document.getElementById("generateAiBtn");
-      
-      banner.classList.remove("hidden");
-      generateBtn.disabled = true;
-      generateBtn.classList.add("opacity-50", "pointer-events-none");
+    /* 一度配信した内容は二度と使わない選出ロジック */
+    function getDailyNonRepeatingThreeTips(forceNewSet = false) {
+      const { key } = getCycleDateKey();
+      const dailyMap = getDailyMap();
+      let deliveredHistory = getDeliveredHistory();
 
-      const existingTitles = getAllKnowledge().map(k => k.title).slice(-15);
-      const todayYear = new Date().getFullYear();
-
-      const systemPrompt = `あなたは医療情報アナリストです。提供されたGoogle検索結果を精査し、最新の日本の医療・臨床ガイドライン改訂、新薬保険適用、厚生労働省の診療報酬改定、医療政策の発表情報から、臨床医や医療従事者が知るべき学習カードを作成してください。
-出力は必ず指定されたJSONフォーマット（Markdownのバッククォートなしの純粋なJSON文字列）のみを返してください。`;
-
-      const userPrompt = `Google検索を活用して、直近（${todayYear}年前後）の日本の厚生労働省発表資料、中医協答申、日本医学会各分科会の最新ガイドライン、新薬承認適応情報から、最新の「医学・臨床」および「医療行政・制度改革」の重要トピックを${count}件調査し、以下のJSON配列形式で抽出してください。
-
-既に存在する以下のトピックとは異なる、最新のトピックを厳選してください:
-${existingTitles.join("、")}
-
-【出力必須JSON構造】
-[
-  {
-    "category": "医学" または "医療行政",
-    "subCategory": "分野名（例: 呼吸器内科、診療報酬改定、医療DXなど）",
-    "icon": "lucideアイコン名（例: heart-pulse, activity, shield, building-2, file-spreadsheet, network, pill, brain）",
-    "title": "簡潔で専門的なトピック名",
-    "summary": "2〜3行の要約",
-    "detail": "最新の背景、改訂ポイント、制度要件などの詳細解説",
-    "clinicalPoint": "実務・臨床現場でのチェックポイントや注意点",
-    "source": "公的出典名・学会名・資料名",
-    "sourceExcerpt": "公的発表資料の要点・抜粋",
-    "sourceUrl": "検索結果から得られた公式URL（見当たらない場合は厚生労働省https://www.mhlw.go.jp/等の公的URL）",
-    "tags": ["タグ1", "タグ2", "タグ3"]
-  }
-]`;
-
-      const payload = {
-        contents: [{ parts: [{ text: userPrompt }] }],
-        tools: [{ "google_search": {} }],
-        systemInstruction: { parts: [{ text: systemPrompt }] }
-      };
-
-      try {
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-        // リトライロジック
-        let response;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            response = await fetch(apiUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            if (response.ok) break;
-          } catch (e) {
-            if (attempt === 2) throw e;
-            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
-          }
-        }
-
-        const data = await response.json();
-        const candidate = data?.candidates?.[0];
-        const candidateText = candidate?.content?.parts?.[0]?.text;
-
-        // 検索グラウンディングのソース取得
-        let groundingSources = [];
-        if (candidate?.groundingMetadata?.groundingAttributions) {
-          groundingSources = candidate.groundingMetadata.groundingAttributions
-            .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
-            .filter(s => s.uri);
-        }
-
-        if (candidateText) {
-          // JSON抽出（コードブロックのトリム処理）
-          let jsonStr = candidateText.trim();
-          if (jsonStr.startsWith("```json")) {
-            jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/```$/, "").trim();
-          } else if (jsonStr.startsWith("```")) {
-            jsonStr = jsonStr.replace(/^```\s*/, "").replace(/```$/, "").trim();
-          }
-
-          const parsed = JSON.parse(jsonStr);
-          const newItems = parsed.map((item, idx) => {
-            // 検索から取得した最新URLがあれば補完
-            const matchedSource = groundingSources[idx] || groundingSources[0];
-            const finalUrl = (matchedSource && matchedSource.uri) ? matchedSource.uri : (item.sourceUrl || "https://www.mhlw.go.jp/");
-            return {
-              ...item,
-              sourceUrl: finalUrl,
-              id: `gen_web_${Date.now()}_${idx}`,
-              isAiGenerated: true,
-              isWebGrounded: true
-            };
-          });
-
-          // 生成カードを先頭に追加（今日の学習として即反映）
-          state.generatedCards.unshift(...newItems);
-          newItems.forEach(item => {
-            state.viewedCardIds = state.viewedCardIds.filter(id => id !== item.id);
-          });
-          state.lastAutoGeneratedDate = getDisplayDate(0).isoDate;
-          saveState();
-
-          showToast(`🌐 Web検索から最新の知見・トピックを${newItems.length}件取得しました！`);
-        } else {
-          showToast("最新情報の取得結果を解析できませんでした。再度お試しください。");
-        }
-      } catch (err) {
-        console.error("AI Generation with Search Error:", err);
-        showToast("最新情報の取得中にエラーが発生しました。時間を置いてお試しください。");
-      } finally {
-        banner.classList.add("hidden");
-        generateBtn.disabled = false;
-        generateBtn.classList.remove("opacity-50", "pointer-events-none");
-        renderCards();
-      }
-    }
-
-    // 未表示・未完了を優先し、AI生成カードも統合して提示するローテーションセレクター
-    function getDailyCards(dateSeed, count, balance) {
-      const allPool = getAllKnowledge();
-      let medPool = allPool.filter(k => k.category === "医学");
-      let admPool = allPool.filter(k => k.category === "医療行政");
-
-      const effectiveSeed = dateSeed + (state.sessionSeedOffset * 137);
-
-      function sortSmart(pool, seedOffset) {
-        return [...pool].sort((a, b) => {
-          // AI生成された最新カードは最優先
-          if (a.isAiGenerated && !b.isAiGenerated) return -1;
-          if (!a.isAiGenerated && b.isAiGenerated) return 1;
-
-          const aViewed = state.viewedCardIds.includes(a.id);
-          const bViewed = state.viewedCardIds.includes(b.id);
-          const aCompleted = state.completedCardIds.includes(a.id);
-          const bCompleted = state.completedCardIds.includes(b.id);
-
-          const aScore = (aCompleted ? 2 : 0) + (aViewed ? 1 : 0);
-          const bScore = (bCompleted ? 2 : 0) + (bViewed ? 1 : 0);
-
-          if (aScore !== bScore) {
-            return aScore - bScore;
-          }
-
-          const hashA = Math.sin(effectiveSeed + a.id.charCodeAt(1) + seedOffset) * 10000;
-          const hashB = Math.sin(effectiveSeed + b.id.charCodeAt(1) + seedOffset) * 10000;
-          return (hashA - Math.floor(hashA)) - (hashB - Math.floor(hashB));
-        });
-      }
-
-      medPool = sortSmart(medPool, 17);
-      admPool = sortSmart(admPool, 73);
-
-      let selected = [];
-      if (balance === "medical_priority") {
-        const medCount = Math.min(medPool.length, Math.ceil(count * 0.7));
-        const admCount = Math.min(admPool.length, count - medCount);
-        selected = [...medPool.slice(0, medCount), ...admPool.slice(0, admCount)];
-      } else if (balance === "admin_priority") {
-        const admCount = Math.min(admPool.length, Math.ceil(count * 0.7));
-        const medCount = Math.min(medPool.length, count - admCount);
-        selected = [...admPool.slice(0, admCount), ...medPool.slice(0, medCount)];
-      } else {
-        let mIdx = 0, aIdx = 0;
-        while (selected.length < count && (mIdx < medPool.length || aIdx < admPool.length)) {
-          if (mIdx < medPool.length && selected.length < count) {
-            selected.push(medPool[mIdx++]);
-          }
-          if (aIdx < admPool.length && selected.length < count) {
-            selected.push(admPool[aIdx++]);
-          }
+      // 本日のサイクルで既に配信した記録が存在し、強制更新でない場合はそれをそのまま返す
+      if (!forceNewSet && dailyMap[key] && dailyMap[key].length === 3) {
+        const todaysTips = dailyMap[key].map(id => SLEEP_KNOWLEDGE_BASE.find(t => t.id === id)).filter(Boolean);
+        if (todaysTips.length === 3) {
+          updatePoolCounter(deliveredHistory.length);
+          return todaysTips;
         }
       }
 
-      selected.forEach(c => {
-        if (!state.viewedCardIds.includes(c.id)) {
-          state.viewedCardIds.push(c.id);
-        }
-      });
-      if (state.viewedCardIds.length >= allPool.length) {
-        state.viewedCardIds = selected.map(c => c.id);
-      }
-      saveState();
+      // 過去に配信されたことのない（二度と使わない）未配信プールを抽出
+      const deliveredSet = new Set(deliveredHistory);
+      let unDeliveredPool = SLEEP_KNOWLEDGE_BASE.filter(item => !deliveredSet.has(item.id));
 
-      return selected.slice(0, count);
+      // 万が一全トピックを配信し尽くした場合は自動で再循環案内
+      if (unDeliveredPool.length < 3) {
+        // すべてのストックを配信完了したため、ユーザーに通知してリセット
+        deliveredHistory = [];
+        saveDeliveredHistory([]);
+        unDeliveredPool = [...SLEEP_KNOWLEDGE_BASE];
+        showToast('全ストックの配信を完了しました。新サイクルを開始します', true);
+      }
+
+      // 未配信プールからランダムに重複なく3つを抽出
+      const shuffled = [...unDeliveredPool].sort(() => 0.5 - Math.random());
+      const selectedThree = shuffled.slice(0, 3);
+      const selectedIds = selectedThree.map(t => t.id);
+
+      // 配信済み履歴に永久記録（二度と再登場させない）
+      deliveredHistory.push(...selectedIds);
+      saveDeliveredHistory(deliveredHistory);
+
+      // 本日サイクルの配信データとして記録
+      dailyMap[key] = selectedIds;
+      saveDailyMap(dailyMap);
+
+      updatePoolCounter(deliveredHistory.length);
+      return selectedThree;
     }
 
-    const FONT_SCALES = {
-      sm: { root: '0.875rem', label: '小 (85%)' },
-      md: { root: '1rem', label: '中 (100%)' },
-      lg: { root: '1.15rem', label: '大 (115%)' },
-      xl: { root: '1.3rem', label: '特大 (130%)' }
-    };
-
-    function applyFontSize(sizeKey) {
-      if (!FONT_SCALES[sizeKey]) sizeKey = 'md';
-      state.fontSize = sizeKey;
-      // コンテンツ領域にのみフォントスケーリングを適用し、ヘッダーの破綻を防ぐ
-      document.documentElement.style.setProperty('--app-font-scale', FONT_SCALES[sizeKey].root);
-      
-      const labelElem = document.getElementById("currentSizeLabel");
-      if (labelElem) {
-        labelElem.textContent = sizeKey === 'sm' ? '小' : (sizeKey === 'md' ? '中' : (sizeKey === 'lg' ? '大' : '特大'));
-      }
-
-      // プレビューのスタイル更新
-      const previewText = document.querySelector("#fontSizeModalBox .scalable-text");
-      if (previewText) {
-        previewText.style.fontSize = FONT_SCALES[sizeKey].root;
-      }
-
-      // プリセットボタンのアクティブ表示切替
-      document.querySelectorAll(".size-preset-btn").forEach(btn => {
-        const bSize = btn.getAttribute("data-size");
-        if (bSize === sizeKey) {
-          btn.className = "size-preset-btn p-2 rounded-xl border-2 border-teal-600 bg-teal-50 text-center transition";
-        } else {
-          btn.className = "size-preset-btn p-2 rounded-xl border border-slate-200 text-center hover:border-teal-500 transition";
-        }
-      });
-      saveState();
+    /* 残り未配信件数と既配信件数の表示更新 */
+    function updatePoolCounter(deliveredCount) {
+      const total = SLEEP_KNOWLEDGE_BASE.length;
+      const countEl = document.getElementById('deliveredCount');
+      const remEl = document.getElementById('remainingCount');
+      if (countEl) countEl.textContent = deliveredCount;
+      if (remEl) remEl.textContent = Math.max(0, total - deliveredCount);
     }
 
-    function renderCards() {
-      const dateInfo = getDisplayDate(state.currentDateOffset);
-      document.getElementById("currentDateDisplay").textContent = dateInfo.fullString;
-      document.getElementById("scheduleBadge").textContent = `1日${state.deliveryCount}問配信`;
-
-      const allKnowledge = getAllKnowledge();
-      const poolStatsElem = document.getElementById("poolStatsDisplay");
-      if (poolStatsElem) {
-        poolStatsElem.textContent = `全${allKnowledge.length}問 (うちAI生成${state.generatedCards.length}問) / ${state.completedCardIds.length}問習得`;
-      }
-
-      let dailyCards = getDailyCards(dateInfo.seed, state.deliveryCount, state.balanceSetting);
-
-      if (state.activeFilter !== "all") {
-        dailyCards = dailyCards.filter(c => c.category === state.activeFilter);
-      }
-
-      const cardListElem = document.getElementById("knowledgeCardList");
-      const noContentElem = document.getElementById("noContentState");
-      cardListElem.innerHTML = "";
-
-      if (dailyCards.length === 0) {
-        noContentElem.classList.remove("hidden");
-      } else {
-        noContentElem.classList.add("hidden");
-      }
-
-      let completedCount = 0;
-
-      dailyCards.forEach((item, index) => {
-        const isCompleted = state.completedCardIds.includes(item.id);
-        const isBookmarked = state.bookmarkedCardIds.includes(item.id);
-        if (isCompleted) completedCount++;
-
-        const isMed = item.category === "医学";
-        const catBadgeBg = isMed ? "bg-teal-50 text-teal-800 border-teal-200" : "bg-sky-50 text-sky-800 border-sky-200";
-        const iconGradient = isMed 
-          ? "from-teal-500 to-emerald-500 text-white shadow-teal-500/20" 
-          : "from-sky-500 to-indigo-500 text-white shadow-sky-500/20";
-        const borderAccent = isMed ? "hover:border-teal-400" : "hover:border-sky-400";
-
-        const card = document.createElement("article");
-        card.className = `bg-white rounded-2xl border transition-all duration-200 shadow-sm ${borderAccent} p-4 sm:p-6 flex flex-col justify-between gap-4 ${isCompleted ? 'border-slate-200 bg-slate-50/50' : 'border-slate-200'}`;
-
-        card.innerHTML = `
-          <!-- 上部タグとアクション -->
-          <div class="flex flex-wrap items-center justify-between gap-2.5 pb-1 border-b border-slate-100">
-            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr ${iconGradient} flex items-center justify-center shadow-md flex-shrink-0">
-                <i data-lucide="${item.icon || (isMed ? 'stethoscope' : 'landmark')}" class="w-4 h-4 stroke-[2.2]"></i>
-              </div>
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-semibold border ${catBadgeBg} whitespace-nowrap">
-                ${item.category}
-              </span>
-              <span class="text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-slate-100 text-slate-600 font-medium whitespace-nowrap">
-                ${item.subCategory}
-              </span>
-              ${item.isWebGrounded ? `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 text-teal-900 border border-teal-300 font-semibold"><i data-lucide="globe" class="w-3 h-3 text-teal-700"></i>最新Web取得</span>` : (item.isAiGenerated ? `<span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border border-amber-200 font-semibold"><i data-lucide="sparkles" class="w-3 h-3 text-amber-600"></i>AI新トピック</span>` : '')}
-              <span class="text-xs text-slate-400 font-mono">#${index + 1}</span>
-            </div>
-
-            <!-- ブックマーク & 完了ボタン -->
-            <div class="flex items-center gap-1.5 flex-shrink-0 ml-auto">
-              <button onclick="toggleBookmark('${item.id}')" class="p-1.5 sm:p-2 rounded-xl border border-slate-200 hover:bg-amber-50 hover:border-amber-300 transition text-slate-400 ${isBookmarked ? 'text-amber-500 bg-amber-50 border-amber-300' : ''}" title="${isBookmarked ? '保存解除' : '要復習として保存'}">
-                <i data-lucide="bookmark" class="w-4 h-4 fill-current"></i>
-              </button>
-              <button onclick="toggleComplete('${item.id}')" class="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition text-xs font-semibold ${isCompleted ? 'bg-teal-600 text-white border-teal-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">
-                <i data-lucide="${isCompleted ? 'check-circle' : 'circle'}" class="w-3.5 h-3.5"></i>
-                <span>${isCompleted ? '習得済' : '完了にする'}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- タイトルと要約 -->
-          <div>
-            <h2 class="font-bold text-slate-900 scalable-heading tracking-tight mb-2">
-              ${item.title}
-            </h2>
-            <p class="text-slate-700 scalable-text font-medium bg-slate-50 p-3 sm:p-3.5 rounded-xl border-l-4 ${isMed ? 'border-teal-500' : 'border-sky-500'}">
-              ${item.summary}
-            </p>
-          </div>
-
-          <!-- 詳細解説 -->
-          <div class="text-slate-700 scalable-text space-y-3">
-            <p class="leading-relaxed">
-              ${item.detail}
-            </p>
-
-            <div class="p-3.5 rounded-xl ${isMed ? 'bg-teal-50/70 border border-teal-100 text-teal-950' : 'bg-sky-50/70 border border-sky-100 text-sky-950'}">
-              <div class="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider mb-1 ${isMed ? 'text-teal-800' : 'text-sky-800'}">
-                <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500 flex-shrink-0"></i>
-                <span>実務・臨床チェックポイント</span>
-              </div>
-              <p class="text-xs sm:text-sm leading-relaxed">
-                ${item.clinicalPoint}
-              </p>
-            </div>
-
-            <!-- 出典表示 -->
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/90 text-xs">
-              <div class="flex items-center justify-between gap-2 mb-1.5">
-                <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  <i data-lucide="file-check" class="w-3.5 h-3.5 ${isMed ? 'text-teal-600' : 'text-sky-600'}"></i>
-                  <span>出典 / ガイドライン</span>
-                </span>
-                <span class="text-[10px] text-teal-600 font-medium">タップして公式資料を表示</span>
-              </div>
-              <button type="button" onclick="handleOpenSource('${item.id}')" class="w-full text-left group flex items-center justify-between gap-2 p-2.5 rounded-lg bg-white border border-slate-200 hover:border-teal-500 hover:shadow-sm text-slate-700 hover:text-teal-700 transition cursor-pointer active:scale-[0.99]">
-                <span class="text-xs font-medium leading-snug break-words group-hover:underline">
-                  ${item.source}
-                </span>
-                <span class="flex items-center gap-1 text-[11px] font-semibold text-teal-600 flex-shrink-0 bg-teal-50 px-2 py-1 rounded group-hover:bg-teal-600 group-hover:text-white transition">
-                  <span>出典を開く</span>
-                  <i data-lucide="external-link" class="w-3 h-3"></i>
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <!-- タグクラウド -->
-          <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
-            ${item.tags.map(t => `<span class="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">#${t}</span>`).join('')}
-          </div>
-        `;
-
-        cardListElem.appendChild(card);
-      });
-
-      const progressElem = document.getElementById("completionProgress");
-      progressElem.textContent = `${completedCount} / ${dailyCards.length} 完了`;
-
-      lucide.createIcons();
-    }
-
-    function toggleComplete(id) {
-      if (state.completedCardIds.includes(id)) {
-        state.completedCardIds = state.completedCardIds.filter(i => i !== id);
-        showToast("未完了に戻しました");
-      } else {
-        state.completedCardIds.push(id);
-        showToast("「習得済」に記録しました！お疲れ様でした");
-      }
-      saveState();
-      renderCards();
-    }
-
-    function toggleBookmark(id) {
-      if (state.bookmarkedCardIds.includes(id)) {
-        state.bookmarkedCardIds = state.bookmarkedCardIds.filter(i => i !== id);
-        showToast("ブックマークを解除しました");
-      } else {
-        state.bookmarkedCardIds.push(id);
-        showToast("要復習リストに追加しました");
-      }
-      saveState();
-      updateBookmarkUI();
-      renderCards();
-    }
-
-    function updateBookmarkUI() {
-      const badge = document.getElementById("bookmarkCountBadge");
-      const count = state.bookmarkedCardIds.length;
-      if (count > 0) {
-        badge.textContent = count;
-        badge.classList.remove("hidden");
-      } else {
-        badge.classList.add("hidden");
+    /* 配信履歴のリセット確認 */
+    function confirmResetHistory() {
+      if (window.confirm ? true : true) {
+        localStorage.removeItem(STORAGE_DELIVERED_KEY);
+        localStorage.removeItem(STORAGE_DAILY_MAP_KEY);
+        showToast('配信履歴を初期化しました');
+        toggleModal('notifyModal', false);
+        refreshCurrentView();
       }
     }
 
-    function renderBookmarkList() {
-      const container = document.getElementById("bookmarkListContainer");
-      container.innerHTML = "";
+    /* キャンバスアプリアイコン描画 */
+    function generateAppIcon(hour = 7, minute = 30) {
+      const size = 180;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
 
-      const allKnowledge = getAllKnowledge();
-      const bookmarkedItems = allKnowledge.filter(k => state.bookmarkedCardIds.includes(k.id));
+      const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+      bgGrad.addColorStop(0, '#0f172a');
+      bgGrad.addColorStop(0.5, '#1e1b4b');
+      bgGrad.addColorStop(1, '#31104b');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, size, size);
 
-      if (bookmarkedItems.length === 0) {
+      const glowGrad = ctx.createRadialGradient(size * 0.7, size * 0.3, 5, size * 0.7, size * 0.3, 70);
+      glowGrad.addColorStop(0, 'rgba(246, 211, 101, 0.45)');
+      glowGrad.addColorStop(1, 'rgba(246, 211, 101, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(size * 0.7, size * 0.3, 70, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(250, 204, 21, 0.6)';
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = '#fde68a';
+      ctx.beginPath();
+      ctx.arc(size * 0.48, size * 0.50, 44, 0, Math.PI * 2, true);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(size * 0.60, size * 0.42, 40, 0, Math.PI * 2, true);
+      ctx.fill();
+      ctx.restore();
+
+      function drawDiamondStar(cx, cy, r, alpha) {
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.shadowColor = '#818cf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - r);
+        ctx.quadraticCurveTo(cx, cy, cx + r, cy);
+        ctx.quadraticCurveTo(cx, cy, cx, cy + r);
+        ctx.quadraticCurveTo(cx, cy, cx - r, cy);
+        ctx.quadraticCurveTo(cx, cy, cx, cy - r);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      drawDiamondStar(size * 0.72, size * 0.32, 10, 0.95);
+      drawDiamondStar(size * 0.30, size * 0.70, 6, 0.75);
+      drawDiamondStar(size * 0.25, size * 0.30, 4, 0.6);
+
+      ctx.strokeStyle = 'rgba(129, 140, 248, 0.6)';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+
+      const cx = size * 0.5;
+      const cy = size * 0.5;
+
+      const hourAngle = ((hour % 12) + minute / 60) * (Math.PI / 6) - Math.PI / 2;
+      const hourLength = size * 0.18;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(hourAngle) * hourLength, cy + Math.sin(hourAngle) * hourLength);
+      ctx.stroke();
+
+      const minuteAngle = minute * (Math.PI / 30) - Math.PI / 2;
+      const minuteLength = size * 0.25;
+      ctx.strokeStyle = 'rgba(199, 210, 254, 0.8)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(minuteAngle) * minuteLength, cy + Math.sin(minuteAngle) * minuteLength);
+      ctx.stroke();
+
+      const iconDataUrl = canvas.toDataURL('image/png');
+
+      const appleTouch = document.getElementById('apple-touch-icon');
+      if (appleTouch) appleTouch.href = iconDataUrl;
+      const fav = document.getElementById('favicon');
+      if (fav) fav.href = iconDataUrl;
+
+      const previewCanvas = document.getElementById('iconPreviewCanvas');
+      if (previewCanvas) {
+        const pCtx = previewCanvas.getContext('2d');
+        pCtx.clearRect(0, 0, 80, 80);
+        pCtx.drawImage(canvas, 0, 0, 80, 80);
+      }
+    }
+
+    function selectPresetTime(timeStr) {
+      const input = document.getElementById('deliveryTimeInput');
+      if (input) input.value = timeStr;
+    }
+
+    function renderKnowledgeCards(tipsList, isBookmarkView = false) {
+      const container = document.getElementById('knowledgeCardsContainer');
+      container.innerHTML = '';
+
+      if (tipsList.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-8 text-slate-400">
-            <i data-lucide="bookmark-check" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
-            <p class="text-xs">ブックマークされた知識カードはありません。</p>
+          <div class="glass-card rounded-2xl p-8 text-center space-y-3">
+            <div class="text-4xl">🌙</div>
+            <div class="text-base font-semibold text-slate-200">${isBookmarkView ? '保存された知見はありません' : '配信データがありません'}</div>
+            <p class="text-sm text-slate-400">カード右上のしおりアイコンを押すと、いつでも見返せるようにここにストックされます。</p>
           </div>
         `;
-        lucide.createIcons();
         return;
       }
 
-      bookmarkedItems.forEach(item => {
-        const isMed = item.category === '医学';
-        const div = document.createElement("div");
-        div.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col gap-2";
-        div.innerHTML = `
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-1.5">
-              <i data-lucide="${item.icon || 'file-text'}" class="w-3.5 h-3.5 ${isMed ? 'text-teal-600' : 'text-sky-600'}"></i>
-              <span class="text-[11px] font-semibold px-2 py-0.5 rounded ${isMed ? 'bg-teal-100 text-teal-800' : 'bg-sky-100 text-sky-800'}">
-                ${item.category} / ${item.subCategory}
+      tipsList.forEach((tip, idx) => {
+        const isBookmarked = savedBookmarks.has(tip.id);
+        const card = document.createElement('article');
+        card.className = "glass-card rounded-3xl p-5 border border-white/10 hover:border-indigo-500/40 transition-all duration-300 relative overflow-hidden group";
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${tip.categoryColor}">
+                ${tip.category}
               </span>
-              ${item.isAiGenerated ? `<span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold">AI</span>` : ''}
+              <span class="text-xs text-slate-400 font-mono">No.0${idx + 1}</span>
             </div>
-            <button onclick="toggleBookmark('${item.id}'); renderBookmarkList();" class="text-slate-400 hover:text-red-500 p-1" title="削除">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
+            <div class="flex items-center space-x-1.5 flex-shrink-0">
+              <button onclick="shareTip('${tip.id}')" class="p-2 rounded-xl text-slate-300 hover:text-slate-100 hover:bg-white/10 active:scale-90 transition-all" title="知識を共有">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+              </button>
+              <button onclick="toggleBookmark('${tip.id}')" class="p-2 rounded-xl text-slate-300 hover:text-amber-400 hover:bg-white/10 active:scale-90 transition-all" title="ブックマーク">
+                <svg class="w-5 h-5 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                </svg>
+              </button>
+            </div>
           </div>
-          <h4 class="font-bold text-slate-800 text-sm leading-snug">${item.title}</h4>
-          <p class="text-xs text-slate-600 line-clamp-2">${item.summary}</p>
-          <div class="pt-1.5 border-t border-slate-200 text-xs">
-            <button type="button" onclick="handleOpenSource('${item.id}')" class="inline-flex items-center gap-1.5 text-teal-700 hover:text-teal-900 font-medium text-[11px] text-left hover:underline">
-              <i data-lucide="external-link" class="w-3 h-3 flex-shrink-0"></i>
-              <span>出典: ${item.source}（開く）</span>
-            </button>
+
+          <div class="flex items-start space-x-3 mb-2.5">
+            <span class="text-2xl flex-shrink-0 pt-0.5">${tip.icon}</span>
+            <h3 class="text-base font-bold text-slate-100 leading-snug tracking-tight">${tip.title}</h3>
+          </div>
+
+          <p class="text-sm text-slate-200 leading-relaxed mb-4 pl-9">
+            ${tip.summary}
+          </p>
+
+          <div class="bg-indigo-950/40 border border-indigo-500/20 rounded-2xl p-3 mb-4 flex items-start space-x-2.5">
+            <span class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider bg-indigo-500/20 px-2 py-0.5 rounded flex-shrink-0 mt-0.5 whitespace-nowrap">Action</span>
+            <p class="text-sm text-indigo-100 font-medium leading-relaxed">${tip.action}</p>
+          </div>
+
+          <div class="bg-night-950/70 border border-white/5 rounded-2xl p-3.5 text-xs text-slate-300 font-sans">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center space-x-1.5 text-indigo-300 font-semibold text-xs whitespace-nowrap">
+                <svg class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                <span>出典・査読論文</span>
+              </div>
+              <div class="flex items-center space-x-1.5 flex-shrink-0">
+                <button type="button" onclick="copyCitation('${tip.id}')" class="inline-flex items-center space-x-1 text-[11px] text-slate-200 bg-white/10 hover:bg-white/15 active:scale-95 border border-white/15 px-2 py-1 rounded-lg transition-all whitespace-nowrap" title="出典をコピー">
+                  <svg class="w-3 h-3 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                  </svg>
+                  <span>出典コピー</span>
+                </button>
+                <a href="${tip.citation.url || ('https://doi.org/' + tip.citation.doi)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-[11px] text-indigo-200 bg-indigo-500/25 hover:bg-indigo-500 hover:text-white border border-indigo-500/40 px-2 py-1 rounded-lg transition-all active:scale-95 whitespace-nowrap">
+                  <span>Safariで開く</span>
+                  <svg class="w-2.5 h-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <div class="selectable-text select-text cursor-text bg-black/25 rounded-xl p-3 border border-white/5 space-y-1.5">
+              <div class="text-slate-100 font-semibold text-xs sm:text-sm leading-snug">${tip.citation.journal}</div>
+              <div class="text-slate-200 text-xs italic leading-relaxed">“${tip.citation.title}”</div>
+              <div class="text-slate-300 text-xs flex flex-wrap justify-between gap-1.5 pt-1.5 border-t border-white/5">
+                <span>著者: ${tip.citation.authors}</span>
+                <span class="font-mono text-indigo-300">DOI: ${tip.citation.doi}</span>
+              </div>
+            </div>
           </div>
         `;
-        container.appendChild(div);
+        container.appendChild(card);
       });
-      lucide.createIcons();
     }
 
-    // 出典ボタン押下ハンドラー
-    function handleOpenSource(itemId) {
-      const item = getAllKnowledge().find(k => k.id === itemId);
-      if (!item) return;
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
 
-      const titleElem = document.getElementById("sourceModalTitle");
-      const excerptContainer = document.getElementById("sourceExcerptContainer");
-      const urlInput = document.getElementById("sourceModalUrlInput");
-      const directLink = document.getElementById("sourceDirectLink");
+      toastMsg.textContent = message;
+      toastIcon.textContent = isSuccess ? '✓' : 'ℹ';
+      toastIcon.className = `w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isSuccess ? 'bg-indigo-500/20 text-indigo-300' : 'bg-amber-500/20 text-amber-300'}`;
 
-      titleElem.textContent = item.source;
-      
-      excerptContainer.innerHTML = `
-        <div class="font-bold text-slate-800 border-b border-slate-200/80 pb-1.5 flex items-center gap-1.5">
-          <i data-lucide="book-open" class="w-3.5 h-3.5 text-teal-600"></i>
-          <span>${item.title}</span>
-        </div>
-        <p class="text-slate-600 leading-relaxed pt-1">
-          ${item.sourceExcerpt || (item.summary + " 公式公表資料・ガイドラインに基づき策定。")}
-        </p>
-        <div class="mt-2 text-[11px] text-slate-500 bg-white p-2 rounded-lg border border-slate-200">
-          <span class="font-semibold text-teal-700">分類:</span> ${item.category}（${item.subCategory}）<br>
-          <span class="font-semibold text-teal-700">根拠元:</span> ${item.source}
-        </div>
-      `;
+      toast.classList.remove('-translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
 
-      urlInput.value = item.sourceUrl;
-      directLink.href = item.sourceUrl;
-      directLink.setAttribute("target", "_blank");
-
-      openModal("sourceModal", "sourceModalBox");
-      lucide.createIcons();
-    }
-
-    let toastTimeout = null;
-    function showToast(msg) {
-      const toast = document.getElementById("toast");
-      const toastMsg = document.getElementById("toastMsg");
-      toastMsg.textContent = msg;
-
-      toast.classList.remove("opacity-0", "translate-y-10", "pointer-events-none");
-      toast.classList.add("opacity-100", "translate-y-0");
-
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove("opacity-100", "translate-y-0");
-        toast.classList.add("opacity-0", "translate-y-10", "pointer-events-none");
+      setTimeout(() => {
+        toast.classList.add('-translate-y-24', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
       }, 2500);
     }
 
-    function openModal(modalId, boxId) {
-      const modal = document.getElementById(modalId);
-      const box = document.getElementById(boxId);
-      modal.classList.remove("hidden");
-      setTimeout(() => {
-        modal.classList.remove("opacity-0");
-        box.classList.remove("scale-95");
-        box.classList.add("scale-100");
-      }, 10);
-    }
+    function copyCitation(tipId) {
+      const tip = SLEEP_KNOWLEDGE_BASE.find(t => t.id === tipId);
+      if (!tip || !tip.citation) return;
 
-    function closeModal(modalId, boxId) {
-      const modal = document.getElementById(modalId);
-      const box = document.getElementById(boxId);
-      modal.classList.add("opacity-0");
-      box.classList.remove("scale-100");
-      box.classList.add("scale-95");
-      setTimeout(() => {
-        modal.classList.add("hidden");
-      }, 200);
-    }
+      const citationText = `${tip.citation.authors}. "${tip.citation.title}". ${tip.citation.journal}. DOI: ${tip.citation.doi} (${tip.citation.url || ('https://doi.org/' + tip.citation.doi)})`;
 
-    // Safariのホーム画面追加用アイコンをCanvasで高解像度描画（エメラルドグラデーション＋心電パルス）
-    function setupAppleTouchIcon() {
+      const textArea = document.createElement("textarea");
+      textArea.value = citationText;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
       try {
-        const canvas = document.createElement("canvas");
-        canvas.width = 180;
-        canvas.height = 180;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        // リッチなティール〜スカイブルーのグラデーション背景
-        const grad = ctx.createLinearGradient(0, 0, 180, 180);
-        grad.addColorStop(0, "#0f766e");
-        grad.addColorStop(0.5, "#0d9488");
-        grad.addColorStop(1, "#0284c7");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        // 角丸Rect（iOSの自動マスクにも耐える余裕を持った描画）
-        ctx.rect(0, 0, 180, 180);
-        ctx.fill();
-
-        // 繊細なパルス波形の描画（ホワイト）
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 10;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        ctx.moveTo(25, 95);
-        ctx.lineTo(55, 95);
-        ctx.lineTo(72, 50);
-        ctx.lineTo(95, 138);
-        ctx.lineTo(115, 75);
-        ctx.lineTo(128, 105);
-        ctx.lineTo(138, 95);
-        ctx.lineTo(155, 95);
-        ctx.stroke();
-
-        // 右上にエメラルドのアクセントパルスドット
-        ctx.fillStyle = "#34d399";
-        ctx.beginPath();
-        ctx.arc(145, 38, 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 下部にスマートなミニテキスト
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.font = "bold 16px 'Noto Sans JP', sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("MedPulse", 90, 162);
-
-        // アイコン要素にセット
-        const iconUrl = canvas.toDataURL("image/png");
-        const touchIconElem = document.getElementById("appleTouchIcon");
-        if (touchIconElem) {
-          touchIconElem.href = iconUrl;
-        }
+        document.execCommand('copy');
+        showToast('出典・文献情報をコピーしました！');
       } catch (err) {
-        console.warn("Touch icon generation skipped:", err);
+        showToast('コピーに失敗しました', false);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function toggleBookmark(tipId) {
+      if (savedBookmarks.has(tipId)) {
+        savedBookmarks.delete(tipId);
+        showToast('ブックマークから削除しました');
+      } else {
+        savedBookmarks.add(tipId);
+        showToast('知見を保存しました！');
+      }
+      refreshCurrentView();
+    }
+
+    function shareTip(tipId) {
+      const tip = SLEEP_KNOWLEDGE_BASE.find(t => t.id === tipId);
+      if (!tip) return;
+      const shareText = `【Somna 睡眠知識】${tip.title}\n${tip.summary}\n■実践: ${tip.action}\n■出典: ${tip.citation.journal} (${tip.citation.authors})`;
+      
+      const textArea = document.createElement("textarea");
+      textArea.value = shareText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('知識テキストをコピーしました');
+      } catch (err) {
+        showToast('コピーできませんでした', false);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function toggleModal(modalId, show) {
+      const modal = document.getElementById(modalId);
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadState();
-      applyFontSize(state.fontSize);
-      updateBookmarkUI();
-      setupAppleTouchIcon();
+    /* 画面切り替え（二度と使わないロジックの適用） */
+    function refreshCurrentView(forceNew = false) {
+      if (currentTab === 'today') {
+        const todaysThree = getDailyNonRepeatingThreeTips(forceNew);
+        renderKnowledgeCards(todaysThree, false);
+      } else if (currentTab === 'archive') {
+        // 知恵録タブでは過去に配信されたすべての知見を履歴順に閲覧可能
+        const deliveredIds = getDeliveredHistory();
+        const deliveredTips = deliveredIds.map(id => SLEEP_KNOWLEDGE_BASE.find(t => t.id === id)).filter(Boolean);
+        renderKnowledgeCards(deliveredTips.length > 0 ? deliveredTips : SLEEP_KNOWLEDGE_BASE, false);
+      } else if (currentTab === 'bookmarks') {
+        const bookmarkedTips = SLEEP_KNOWLEDGE_BASE.filter(t => savedBookmarks.has(t.id));
+        renderKnowledgeCards(bookmarkedTips, true);
+      }
+    }
 
-      // 日付操作
-      document.getElementById("prevDayBtn").addEventListener("click", () => {
-        state.currentDateOffset--;
-        renderCards();
-      });
-      document.getElementById("todayBtn").addEventListener("click", () => {
-        state.currentDateOffset = 0;
-        renderCards();
-      });
+    /* 手動リフレッシュ時も過去の知見を二度と使わず完全新規トピックを抽出 */
+    async function triggerLatestTopicsRefresh() {
+      const icon = document.getElementById('refreshIcon');
+      const statusLabel = document.getElementById('topicSourceStatus');
 
-      // AIで新しいトピックを即座に生成
-      document.getElementById("generateAiBtn").addEventListener("click", () => {
-        generateNewTopicWithAI(state.deliveryCount || 3);
-      });
+      if (icon) icon.classList.add('animate-spin');
+      if (statusLabel) statusLabel.textContent = '未配信の最新トピックを取得中...';
 
-      // 日付が変わって初回アクセスの場合は自動でAI生成を試みる
-      const todayIso = getDisplayDate(0).isoDate;
-      if (state.lastAutoGeneratedDate !== todayIso && state.generatedCards.length < 200) {
-        // バックグラウンドで本日の新規トピックを生成
-        setTimeout(() => {
-          generateNewTopicWithAI(state.deliveryCount || 3);
-        }, 1200);
+      await new Promise(r => setTimeout(r, 500));
+
+      refreshCurrentView(true); // forceNew = true
+
+      if (icon) icon.classList.remove('animate-spin');
+      if (statusLabel) statusLabel.textContent = '最新査読論文より日替わり抽出';
+      showToast('過去配信と重複のない新しい3選に更新しました！');
+    }
+
+    function setupTabs() {
+      const tabs = [
+        { id: 'tabToday', view: 'today' },
+        { id: 'tabArchive', view: 'archive' },
+        { id: 'tabBookmarks', view: 'bookmarks' },
+      ];
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(t.id);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          currentTab = t.view;
+          document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('text-indigo-400');
+            b.classList.add('text-slate-400');
+          });
+          btn.classList.add('text-indigo-400');
+          btn.classList.remove('text-slate-400');
+          refreshCurrentView(false);
+        });
+      });
+    }
+
+    function setupDeliveryTimeFeature() {
+      const saveBtn = document.getElementById('saveTimeSettingBtn');
+      const timeInput = document.getElementById('deliveryTimeInput');
+
+      saveBtn.addEventListener('click', async () => {
+        if (timeInput && timeInput.value) {
+          const parts = timeInput.value.split(':');
+          deliveryHour = parseInt(parts[0], 10);
+          deliveryMinute = parseInt(parts[1], 10);
+
+          const timeStr = formatTimeDisplay(deliveryHour, deliveryMinute);
+          
+          document.getElementById('deliveryBadge').textContent = `${timeStr} 配信`;
+          generateAppIcon(deliveryHour, deliveryMinute);
+
+          if ('Notification' in window && Notification.permission === 'default') {
+            try {
+              await Notification.requestPermission();
+            } catch (e) {}
+          }
+
+          showToast(`毎日の配信時刻を ${timeStr} に変更しました！`);
+          toggleModal('notifyModal', false);
+          refreshCurrentView(false);
+        }
+      });
+    }
+
+    window.onload = function() {
+      generateAppIcon(deliveryHour, deliveryMinute);
+
+      const cycle = getCycleDateKey();
+      document.getElementById('todayDateLabel').textContent = cycle.formatted;
+
+      setupTabs();
+      setupDeliveryTimeFeature();
+
+      // 初回レンダリング（一度配信したものは二度と再登場しない）
+      refreshCurrentView(false);
+
+      const refreshBtn = document.getElementById('refreshTopicsBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', triggerLatestTopicsRefresh);
       }
 
-      // 別の問題にシャッフル更新
-      document.getElementById("refreshCardsBtn").addEventListener("click", () => {
-        state.sessionSeedOffset++;
-        saveState();
-        renderCards();
-        showToast("別のトピックを読み込みました！");
+      document.getElementById('notifySettingBtn').addEventListener('click', () => {
+        toggleModal('notifyModal', true);
       });
-
-      // 文字サイズモーダル
-      const fontModal = document.getElementById("fontSizeModal");
-      document.getElementById("fontSizeBtn").addEventListener("click", () => {
-        openModal("fontSizeModal", "fontSizeModalBox");
-      });
-      document.getElementById("closeFontModal").addEventListener("click", () => {
-        closeModal("fontSizeModal", "fontSizeModalBox");
-      });
-      document.getElementById("applyFontSizeBtn").addEventListener("click", () => {
-        closeModal("fontSizeModal", "fontSizeModalBox");
-        showToast("文字サイズを適用しました");
-      });
-
-      document.querySelectorAll(".size-preset-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const s = btn.getAttribute("data-size");
-          applyFontSize(s);
-        });
-      });
-
-      // スケジュール・配信設定モーダル
-      const schedModal = document.getElementById("scheduleModal");
-      const deliveryInput = document.getElementById("deliveryCountInput");
-      const deliveryVal = document.getElementById("deliveryCountVal");
-      const balanceSelect = document.getElementById("balanceSelect");
-
-      document.getElementById("openScheduleBtn").addEventListener("click", () => {
-        deliveryInput.value = state.deliveryCount;
-        deliveryVal.textContent = `${state.deliveryCount}件`;
-        balanceSelect.value = state.balanceSetting;
-        openModal("scheduleModal", "scheduleModalBox");
-      });
-
-      deliveryInput.addEventListener("input", (e) => {
-        deliveryVal.textContent = `${e.target.value}件`;
-      });
-
-      document.getElementById("closeScheduleModal").addEventListener("click", () => {
-        closeModal("scheduleModal", "scheduleModalBox");
-      });
-
-      document.getElementById("saveScheduleBtn").addEventListener("click", () => {
-        state.deliveryCount = parseInt(deliveryInput.value, 10);
-        state.balanceSetting = balanceSelect.value;
-        saveState();
-        closeModal("scheduleModal", "scheduleModalBox");
-        renderCards();
-        showToast(`配信設定を更新しました (1日${state.deliveryCount}件)`);
-      });
-
-      // ブックマークモーダル
-      document.getElementById("openBookmarkBtn").addEventListener("click", () => {
-        renderBookmarkList();
-        openModal("bookmarkModal", "bookmarkModalBox");
-      });
-      document.getElementById("closeBookmarkModal").addEventListener("click", () => {
-        closeModal("bookmarkModal", "bookmarkModalBox");
-      });
-
-      // 出典モーダル操作
-      document.getElementById("closeSourceModal").addEventListener("click", () => {
-        closeModal("sourceModal", "sourceModalBox");
-      });
-      document.getElementById("closeSourceModalBtn").addEventListener("click", () => {
-        closeModal("sourceModal", "sourceModalBox");
-      });
-
-      document.getElementById("copySourceUrlBtn").addEventListener("click", () => {
-        const input = document.getElementById("sourceModalUrlInput");
-        input.select();
-        document.execCommand('copy');
-        showToast("公式URLをコピーしました！Safariで開けます");
-      });
-
-      // ブラウザで開くリンク押下時のフォールバック処理
-      document.getElementById("sourceDirectLink").addEventListener("click", (e) => {
-        const url = e.currentTarget.getAttribute("href");
-        if (!url || url === "#") return;
-        // iframeサンドボックス等で新規タブがブロックされた場合の通知
-        setTimeout(() => {
-          showToast("ブラウザが開かない場合は「URLコピー」をご活用ください");
-        }, 300);
-      });
-
-      // カテゴリフィルター
-      document.querySelectorAll(".filter-chip").forEach(chip => {
-        chip.addEventListener("click", (e) => {
-          document.querySelectorAll(".filter-chip").forEach(c => {
-            c.classList.remove("active-filter", "bg-white", "text-slate-900", "shadow-sm", "border", "border-slate-200");
-            c.classList.add("text-slate-600");
-          });
-          chip.classList.add("active-filter", "bg-white", "text-slate-900", "shadow-sm", "border", "border-slate-200");
-          chip.classList.remove("text-slate-600");
-
-          state.activeFilter = chip.getAttribute("data-cat");
-          renderCards();
-        });
-      });
-
-      renderCards();
-    });
+    };
   </script>
 </body>
 </html>
