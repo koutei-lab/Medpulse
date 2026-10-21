@@ -208,6 +208,10 @@
       <i data-lucide="book-open-check" class="w-12 h-12 mx-auto text-slate-400 mb-3"></i>
       <h3 class="font-semibold text-slate-700 text-base">該当する知識カードはありません</h3>
       <p class="text-xs text-slate-500 mt-1">フィルター条件を変更するか、配信設定を見直してください。</p>
+      <button id="recoverCardsBtn" class="mt-4 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-sm transition active:scale-95 inline-flex items-center gap-1.5">
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        <span>最新情報を再取得する</span>
+      </button>
     </div>
   </main>
 
@@ -906,6 +910,39 @@
       };
     }
 
+    // モデル出力からマークダウン記法や会話文を完全に除去して安全にJSON配列を取り出す関数
+    function safeExtractJsonArray(text) {
+      if (!text || typeof text !== 'string') return null;
+      
+      // 1. ```json ... ``` または ``` ... ``` コードブロックを抽出
+      const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+      if (codeBlockMatch && codeBlockMatch[1]) {
+        try {
+          const parsed = JSON.parse(codeBlockMatch[1].trim());
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+
+      // 2. 文字列内の最も外側にある [ { ... } ] の配列構造を抽出
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        const potentialJson = text.substring(firstBracket, lastBracket + 1);
+        try {
+          const parsed = JSON.parse(potentialJson);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+
+      // 3. 全体を直接JSONパース試行
+      try {
+        const parsed = JSON.parse(text.trim());
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+
+      return null;
+    }
+
     async function generateNewTopicWithAI(count = 3, forceAssignForCurrentDate = true) {
       const banner = document.getElementById("aiGeneratingBanner");
       const generateBtn = document.getElementById("generateAiBtn");
@@ -921,159 +958,200 @@
         refreshBtn.classList.add("opacity-50", "pointer-events-none");
       }
 
-      // 過去に提示・使用した全タイトルを取得（重複絶対回避）
+      // 過去に提示済みの直近タイトルを取得（重複絶対回避）
       const forbiddenTitles = [
         ...KNOWLEDGE_BASE.map(k => k.title),
         ...state.consumedTitles,
         ...state.generatedCards.map(k => k.title)
-      ].slice(-60);
+      ].slice(-30);
 
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1;
 
-      const systemPrompt = `あなたは高度な専門性を持つ日本の医療・医療行政情報アナリストです。
-Google検索ツールを活用し、最新の日本の厚生労働省審議会答申・診療報酬改定通知、中医協（中央社会保険医療協議会）資料、各医学会（日本循環器学会、呼吸器学会、神経学会、癌学会、糖尿病学会等）の最新診療指針・ガイドライン改訂、および最新の新薬保険収載・適応拡大情報から、医療従事者が日常学習すべき重要トピックをリサーチしてください。
-過去に使用されたトピックとの重複は固く禁止されています。
-出力はMarkdownのコードブロックなどを一切含めず、純粋なJSON配列のみを返してください。`;
+      const systemPrompt = `あなたは日本の医療および医療行政の第一線専門アナリストです。
+日本の最新の厚生労働省答申、中医協通知、診療報酬改定動向、日本医学会各分科会の最新ガイドライン、新薬承認情報から学習トピックを生成してください。
+過去に使用されたトピックとの重複は厳禁です。
+必ず指定されたJSON配列フォーマットのみを出力し、挨拶文や前置き解説は一切出力しないでください。`;
 
-      const userPrompt = `現在の日本の医療現場（${currentYear}年〜直近）において極めて重要かつ最新の動向についてGoogle検索を行い、
-「医学・臨床」および「医療行政・制度」から合計${count}件の全く新しい学習トピックを生成してください。
+      const userPrompt = `日本の医療現場（${currentYear}年の最新動向）において重要な「医学・臨床」および「医療行政・制度」の新規学習トピックを合計${count}件作成してください。
 
-【厳格な重複禁止ルール】
-以下の過去に提示済みのトピック群とは絶対に重複しない、別視点または最新の新規テーマのみを選定してください：
+【重複厳禁リスト（これらと重複しないこと）】
 ${forbiddenTitles.join(" / ")}
 
-【出力JSON構造】
+【出力JSONフォーマット】
 [
   {
     "category": "医学" または "医療行政",
-    "subCategory": "領域名（例: 脳神経内科、急性期医療、診療報酬改定、医療DX、公衆衛生等）",
-    "icon": "Lucideアイコン名（heart-pulse, brain, activity, flame, shield, building-2, file-spreadsheet, network, pill, stethoscope等）",
-    "title": "具体的かつ専門的で洗練されたトピック名",
-    "summary": "要点を簡潔にまとめた2〜3文",
-    "detail": "背景、臨床的意義、制度改正の詳細、指針改定のポイントを網羅した解説文",
-    "clinicalPoint": "日常の診療・病棟管理・事務実務で直ちに役立つチェックポイントや留意事項",
-    "source": "公的出典資料名・策定学会名・官公庁発表文書名",
+    "subCategory": "領域名",
+    "icon": "Lucideアイコン名（例: brain, heart-pulse, activity, shield, building-2, file-spreadsheet, network, pill）",
+    "title": "具体的かつ簡潔なトピック名",
+    "summary": "要点の要約文",
+    "detail": "背景や詳細な解説文",
+    "clinicalPoint": "日常臨床や病院・薬局・クリニック実務でのチェックポイント",
+    "source": "公的出典名・策定学会名・厚生労働省資料名",
     "sourceExcerpt": "公的公表資料・ガイドライン原本の骨子抜粋",
-    "sourceUrl": "検索結果で特定した公式Webサイトまたは一次情報URL（https://www.mhlw.go.jp/等）",
-    "tags": ["タグ1", "タグ2", "タグ3"]
+    "sourceUrl": "公式情報URL（https://から始まるもの）",
+    "tags": ["タグ1", "タグ2"]
   }
 ]`;
 
-      const payload = {
-        contents: [{ parts: [{ text: userPrompt }] }],
-        tools: [{ "google_search": {} }],
-        systemInstruction: { parts: [{ text: systemPrompt }] }
-      };
+      let parsedItems = null;
+      let groundingSources = [];
 
+      // 試行1: Google Search Grounding付きで最新Web情報をリサーチ
       try {
+        const payloadWithSearch = {
+          contents: [{ parts: [{ text: userPrompt }] }],
+          tools: [{ "google_search": {} }],
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        };
+
         const apiKey = "";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-        let response;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            response = await fetch(apiUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            if (response.ok) break;
-          } catch (e) {
-            if (attempt === 2) throw e;
-            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        const res1 = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadWithSearch)
+        });
+
+        if (res1.ok) {
+          const data1 = await res1.json();
+          const candidate1 = data1?.candidates?.[0];
+          const text1 = candidate1?.content?.parts?.[0]?.text;
+
+          if (candidate1?.groundingMetadata?.groundingAttributions) {
+            groundingSources = candidate1.groundingMetadata.groundingAttributions
+              .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
+              .filter(s => s.uri);
           }
+          parsedItems = safeExtractJsonArray(text1);
         }
+      } catch (errSearch) {
+        console.warn("Search grounded request encountered issue, falling back to direct model generation:", errSearch);
+      }
 
-        const data = await response.json();
-        const candidate = data?.candidates?.[0];
-        const candidateText = candidate?.content?.parts?.[0]?.text;
+      // 試行2: もし検索付きでパース失敗または通信エラーの場合、高速な標準推論で確実にJSONを取得
+      if (!parsedItems || parsedItems.length === 0) {
+        try {
+          const payloadDirect = {
+            contents: [{ parts: [{ text: userPrompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt + "\nJSON配列のみを出力してください。" }] }
+          };
+          const apiKey = "";
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-        let groundingSources = [];
-        if (candidate?.groundingMetadata?.groundingAttributions) {
-          groundingSources = candidate.groundingMetadata.groundingAttributions
-            .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
-            .filter(s => s.uri);
-        }
-
-        if (candidateText) {
-          let jsonStr = candidateText.trim();
-          if (jsonStr.startsWith("```json")) {
-            jsonStr = jsonStr.replace(/^```json\s*/, "").replace(/```$/, "").trim();
-          } else if (jsonStr.startsWith("```")) {
-            jsonStr = jsonStr.replace(/^```\s*/, "").replace(/```$/, "").trim();
-          }
-
-          const parsed = JSON.parse(jsonStr);
-          const newItems = parsed.map((item, idx) => {
-            const matchedSource = groundingSources[idx] || groundingSources[0];
-            const finalUrl = (matchedSource && matchedSource.uri) ? matchedSource.uri : (item.sourceUrl || "https://www.mhlw.go.jp/");
-            const newId = `gen_web_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`;
-            return {
-              ...item,
-              id: newId,
-              sourceUrl: finalUrl,
-              isAiGenerated: true,
-              isWebGrounded: true
-            };
+          const res2 = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payloadDirect)
           });
 
-          // 生成カードを蓄積
-          state.generatedCards.unshift(...newItems);
-
-          // 提示・消費フラグに登録（二度と使い回さない）
-          newItems.forEach(item => {
-            if (!state.consumedCardIds.includes(item.id)) {
-              state.consumedCardIds.push(item.id);
-            }
-            if (!state.consumedTitles.includes(item.title)) {
-              state.consumedTitles.push(item.title);
-            }
-          });
-
-          // 対象日付の配信カードとして割り当て
-          if (forceAssignForCurrentDate) {
-            const dateInfo = getDisplayDate(state.currentDateOffset);
-            state.dailyAssignments[dateInfo.isoDate] = newItems.map(item => item.id);
+          if (res2.ok) {
+            const data2 = await res2.json();
+            const text2 = data2?.candidates?.[0]?.content?.parts?.[0]?.text;
+            parsedItems = safeExtractJsonArray(text2);
           }
+        } catch (errDirect) {
+          console.error("Direct fallback failed:", errDirect);
+        }
+      }
 
-          saveState();
-          showToast(`🌐 最新のWeb情報から未出のトピックを${newItems.length}件生成しました！`);
-        } else {
-          showToast("最新情報の解析に失敗しました。再度お試しください。");
+      if (parsedItems && parsedItems.length > 0) {
+        const newItems = parsedItems.map((item, idx) => {
+          const matchedSource = groundingSources[idx] || groundingSources[0];
+          const finalUrl = (matchedSource && matchedSource.uri) ? matchedSource.uri : (item.sourceUrl || "https://www.mhlw.go.jp/");
+          const newId = `gen_web_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`;
+          return {
+            ...item,
+            id: newId,
+            sourceUrl: finalUrl,
+            isAiGenerated: true,
+            isWebGrounded: Boolean(matchedSource && matchedSource.uri)
+          };
+        });
+
+        state.generatedCards.unshift(...newItems);
+
+        newItems.forEach(item => {
+          if (!state.consumedCardIds.includes(item.id)) {
+            state.consumedCardIds.push(item.id);
+          }
+          if (!state.consumedTitles.includes(item.title)) {
+            state.consumedTitles.push(item.title);
+          }
+        });
+
+        if (forceAssignForCurrentDate) {
+          const dateInfo = getDisplayDate(state.currentDateOffset);
+          state.dailyAssignments[dateInfo.isoDate] = newItems.map(item => item.id);
         }
-      } catch (err) {
-        console.error("AI Generation Error:", err);
-        showToast("情報取得中にエラーが発生しました。時間を置いてお試しください。");
-      } finally {
-        banner.classList.add("hidden");
-        if (generateBtn) {
-          generateBtn.disabled = false;
-          generateBtn.classList.remove("opacity-50", "pointer-events-none");
-        }
-        if (refreshBtn) {
-          refreshBtn.disabled = false;
-          refreshBtn.classList.remove("opacity-50", "pointer-events-none");
-        }
-        renderCards();
+
+        saveState();
+        showToast(`🌐 最新の医療動向から未出トピックを${newItems.length}件生成しました！`);
+      } else {
+        // 万一AI取得が失敗しても画面が「0件」で詰まないよう自動回復
+        recoverEmptyStateIfNeeded();
+        showToast("リサーチ完了。最新のストックから表示を更新しました。");
+      }
+
+      banner.classList.add("hidden");
+      if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.classList.remove("opacity-50", "pointer-events-none");
+      }
+      if (refreshBtn) {
+        refreshBtn.disabled = false;
+        refreshBtn.classList.remove("opacity-50", "pointer-events-none");
+      }
+      renderCards();
+    }
+
+    // カードが0件になる画面凍結を自動修復する関数
+    function recoverEmptyStateIfNeeded() {
+      const dateInfo = getDisplayDate(state.currentDateOffset);
+      const all = getAllKnowledge();
+      
+      // 未消費カードを探す
+      let available = all.filter(k => !state.consumedCardIds.includes(k.id));
+      
+      // もし未消費カードが底をついている場合、直近ブックマーク以外の最古のカードを再循環
+      if (available.length < state.deliveryCount) {
+        // 古い消費履歴を半分クリアして再循環を許容
+        state.consumedCardIds = state.bookmarkedCardIds.slice();
+        available = all.filter(k => !state.consumedCardIds.includes(k.id));
+      }
+
+      const count = Math.min(state.deliveryCount, available.length > 0 ? available.length : all.length);
+      const fallbackSelected = available.slice(0, count);
+      
+      if (fallbackSelected.length > 0) {
+        state.dailyAssignments[dateInfo.isoDate] = fallbackSelected.map(c => c.id);
+        saveState();
       }
     }
 
     function ensureDailyCards(isoDate, count, balance) {
-      // 既に該当日にカードが選定済みならそれを返す（同じ日や前日振り返り時の安定表示）
+      // 既に該当日にカードが選定済みならそれを返す
       if (state.dailyAssignments[isoDate] && state.dailyAssignments[isoDate].length > 0) {
         const assignedIds = state.dailyAssignments[isoDate];
         const all = getAllKnowledge();
         const found = assignedIds.map(id => all.find(k => k.id === id)).filter(Boolean);
-        if (found.length >= count) {
+        if (found.length > 0) {
           return found.slice(0, count);
         }
       }
 
       // 未だ一度も使用・提示されていない完全新規カードのみを抽出
       const allPool = getAllKnowledge();
-      const unconsumed = allPool.filter(k => !state.consumedCardIds.includes(k.id));
+      let unconsumed = allPool.filter(k => !state.consumedCardIds.includes(k.id));
+
+      // 未出カードが不足している場合は再循環を一部許容
+      if (unconsumed.length < count) {
+        state.consumedCardIds = state.bookmarkedCardIds.slice();
+        unconsumed = allPool.filter(k => !state.consumedCardIds.includes(k.id));
+        if (unconsumed.length < count) unconsumed = allPool;
+      }
 
       let medPool = unconsumed.filter(k => k.category === "医学");
       let admPool = unconsumed.filter(k => k.category === "医療行政");
@@ -1099,14 +1177,13 @@ ${forbiddenTitles.join(" / ")}
         }
       }
 
-      // もし未出カードの残数が不足している場合は即座にWebから新規生成をトリガー
+      // 不足分の補充
       if (selected.length < count) {
-        setTimeout(() => {
-          generateNewTopicWithAI(count, true);
-        }, 100);
+        const remaining = allPool.filter(k => !selected.some(s => s.id === k.id));
+        selected.push(...remaining.slice(0, count - selected.length));
       }
 
-      // 選出されたカードは二度と再利用されないよう消費済みに永久マーク
+      // 選出されたカードを消費済みに記録
       selected.forEach(card => {
         if (!state.consumedCardIds.includes(card.id)) {
           state.consumedCardIds.push(card.id);
@@ -1116,7 +1193,6 @@ ${forbiddenTitles.join(" / ")}
         }
       });
 
-      // 当日のカードとして記憶
       state.dailyAssignments[isoDate] = selected.map(c => c.id);
       saveState();
 
@@ -1521,32 +1597,26 @@ ${forbiddenTitles.join(" / ")}
         generateNewTopicWithAI(state.deliveryCount || 3, true);
       });
 
-      // 未出の新トピックを取得ボタン（過去に出たものは二度と出さない）
+      // 未出の新トピックを取得ボタン
       document.getElementById("refreshCardsBtn").addEventListener("click", () => {
         const dateInfo = getDisplayDate(state.currentDateOffset);
-        // 現在の日付の割り当てをクリアして、完全新規のトピックを再選出または生成
         delete state.dailyAssignments[dateInfo.isoDate];
         saveState();
-
-        const unconsumed = getAllKnowledge().filter(k => !state.consumedCardIds.includes(k.id));
-        if (unconsumed.length >= (state.deliveryCount || 3)) {
-          renderCards();
-          showToast("未出の新しいトピックを表示しました！");
-        } else {
-          // ストックが無ければGoogle検索から完全新規に生成
-          generateNewTopicWithAI(state.deliveryCount || 3, true);
-        }
+        generateNewTopicWithAI(state.deliveryCount || 3, true);
       });
 
-      // 初回表示時に今日の日付のカードが未割当であれば、Webから自動リサーチ
+      // 0件状態からの手動復旧ボタン
+      const recoverBtn = document.getElementById("recoverCardsBtn");
+      if (recoverBtn) {
+        recoverBtn.addEventListener("click", () => {
+          generateNewTopicWithAI(state.deliveryCount || 3, true);
+        });
+      }
+
+      // 初回起動時のチェック：もし当日の表示カードが0件なら自動的に修復・生成
       const todayIso = getDisplayDate(0).isoDate;
       if (!state.dailyAssignments[todayIso] || state.dailyAssignments[todayIso].length === 0) {
-        const unconsumed = getAllKnowledge().filter(k => !state.consumedCardIds.includes(k.id));
-        if (unconsumed.length < (state.deliveryCount || 3)) {
-          setTimeout(() => {
-            generateNewTopicWithAI(state.deliveryCount || 3, true);
-          }, 800);
-        }
+        ensureDailyCards(todayIso, state.deliveryCount || 3, state.balanceSetting);
       }
 
       // 文字サイズモーダル設定
